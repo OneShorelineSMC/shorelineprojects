@@ -42,7 +42,21 @@
     td.num, th.num { text-align: right; white-space: nowrap; }
     .note { color: var(--muted); font-size: 12px; margin-top: 18px; }
     .note a { color: var(--accent); }
-    #legendDiv .esri-legend { background: transparent; padding: 0; }
+    .hint { color: var(--muted); font-size: 12px; margin: 2px 0 0 24px; }
+    #mapLegend { background: #fff; color: var(--text); border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.3);
+      font-size: 12px; width: 270px; max-height: 60vh; overflow-y: auto; }
+    #mapLegend .lg-head { display: flex; justify-content: space-between; align-items: center; width: 100%;
+      background: none; color: var(--text); padding: 8px 10px; font-weight: 600; font-size: 13px; border-radius: 6px; }
+    #mapLegend .lg-body { padding: 0 10px 8px; }
+    #mapLegend.collapsed .lg-body { display: none; }
+    #mapLegend h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+      margin: 8px 0 4px; font-weight: 600; }
+    .lg-item { display: flex; align-items: center; gap: 8px; margin: 3px 0; line-height: 1.25; }
+    .sw { flex: none; width: 18px; height: 14px; border: 1px solid rgba(0,0,0,.25); border-radius: 2px; }
+    .sw.hatch { background: repeating-linear-gradient(45deg, #1565c0 0 1.5px, transparent 1.5px 5px); border-color: #1565c0; }
+    .sw.line { height: 0; border: 0; border-top: 2px solid #244161; }
+    .sw.dash { height: 0; border: 0; border-top: 2px dashed #5a5a5a; }
+    @media (max-width: 760px) { #mapLegend { width: 210px; max-height: 35vh; } }
     @media (max-width: 760px) {
       #app { flex-direction: column-reverse; }
       #panel { width: 100%; max-height: 45vh; border-right: 0; border-top: 1px solid var(--line); }
@@ -58,6 +72,13 @@
     <h2>Sea level rise scenario</h2>
     <div id="scenarios"></div>
 
+    <h2>Hazard layers</h2>
+    <label class="row"><input id="lyr_combined" type="checkbox" checked> Combined hazards (BCDC map)</label>
+    <label class="row"><input id="lyr_tidal" type="checkbox"> Tidal inundation (MHHW)</label>
+    <label class="row"><input id="lyr_surge" type="checkbox"> Storm surge (100-year)</label>
+    <label class="row"><input id="lyr_gw" type="checkbox"> Groundwater (emergent &amp; shallow)</label>
+    <p class="hint">Each layer shows the BCDC areas that include that hazard. Storm surge draws as hatching so you can see what's under it.</p>
+
     <h2>Display</h2>
     <label class="row">Opacity <input id="opacity" type="range" min="0.2" max="1" step="0.05" value="0.85"></label>
     <label class="row"><input id="showBay" type="checkbox" checked> Show “Existing Bay”</label>
@@ -66,9 +87,6 @@
 
     <h2>Exclude areas</h2>
     <div id="exclusions"></div>
-
-    <h2>Legend</h2>
-    <div id="legendDiv"></div>
 
     <h2>Export</h2>
     <button id="exportBtn" disabled>Download San Mateo GeoJSON (this scenario)</button>
@@ -134,10 +152,9 @@ require([
   "esri/geometry/geometryEngine",
   "esri/geometry/support/webMercatorUtils",
   "esri/rest/query",
-  "esri/widgets/Legend",
   "esri/widgets/ScaleBar"
 ], function (Map, MapView, FeatureLayer, GraphicsLayer, GroupLayer, Graphic, Polygon,
-             geometryEngine, webMercatorUtils, query, Legend, ScaleBar) {
+             geometryEngine, webMercatorUtils, query, ScaleBar) {
 
   const $ = (id) => document.getElementById(id);
   const statusEl = $("status");
@@ -153,20 +170,101 @@ require([
   const excluded = new Set();    // exclusion ids currently switched on
   const BAY_EXPR = "Hazard_Type <> 'Existing Bay'";
 
-  /* ---------- Hazard layers (live from the BCDC service) ---------- */
-  const hazardLayers = CONFIG.scenarios.map((sc, i) => new FeatureLayer({
-    url: `${CONFIG.serviceUrl}/${sc.id}`,
-    title: `${sc.label} (${sc.sub})`,
-    visible: i === 0,
-    opacity: Number($("opacity").value),
-    outFields: ["Hazard_Type"],
-    popupTemplate: {
-      title: "{Hazard_Type}",
-      content: `<b>Scenario:</b> ${sc.label} (${sc.sub})<br>` +
-               `<span style="color:#666">BCDC RSAP Coastal Flood Hazards. Planning-level data.</span>`
+  /* ---------- Hazard layers (live from the BCDC service) ----------
+     Every scenario gets four views of the same BCDC layer:
+       combined - BCDC's own combined-hazard symbology
+       gw       - every area with a groundwater component, colored by depth
+       tidal    - daily tidal inundation (MHHW)
+       surge    - every area with 100-year storm surge, drawn as hatching
+     Only the views that are switched on (for the active scenario) are drawn. */
+  const GW_CLASSES = [
+    { value: "emergent", label: "Emergent (at the surface)",        color: [140, 45, 4] },
+    { value: "0-3",      label: "Very shallow (0–3 ft below ground)", color: [217, 72, 1] },
+    { value: "3-6",      label: "Shallow (3–6 ft below ground)",      color: [253, 141, 60] },
+    { value: "6-9",      label: "Moderately shallow (6–9 ft below ground)", color: [253, 208, 162] }
+  ];
+  const TIDAL_COLOR = [31, 78, 121];
+  const SURGE_COLOR = [21, 101, 192];
+  const COMBINED_LEGEND = [   // matches BCDC's renderer for these layers
+    { label: "Tidal inundation (MHHW), emergent groundwater",        color: [36, 65, 97] },
+    { label: "Storm surge (100-yr)",                                 color: [68, 100, 135] },
+    { label: "Storm surge (100-yr), emergent groundwater",           color: [54, 74, 29] },
+    { label: "Storm surge (100-yr), shallow groundwater (0–9 ft)",   color: [92, 112, 56] },
+    { label: "Emergent groundwater",                                 color: [97, 60, 78] },
+    { label: "Shallow groundwater (0–9 ft below ground)",            color: [135, 96, 115] },
+    { label: "Existing Bay",                                         color: [204, 237, 255], bay: true }
+  ];
+
+  const VIEWS = {
+    combined: { title: "Combined hazards", where: null, renderer: null },
+    gw: {
+      title: "Groundwater",
+      where: "Hazard_Type LIKE '%Groundwater%'",
+      renderer: {
+        type: "unique-value",
+        valueExpression:
+          "var t = $feature.Hazard_Type; " +
+          "When(Find('Emergent', t) > -1, 'emergent', Find('Very Shallow', t) > -1, '0-3', " +
+          "Find('Moderately Shallow', t) > -1, '6-9', Find('Shallow', t) > -1, '3-6', 'other')",
+        uniqueValueInfos: GW_CLASSES.map((c) => ({
+          value: c.value, label: c.label,
+          symbol: { type: "simple-fill", color: [...c.color, 0.8], outline: { color: [0, 0, 0, 0], width: 0 } }
+        }))
+      }
+    },
+    tidal: {
+      title: "Tidal inundation (MHHW)",
+      where: "Hazard_Type = 'Tidal Inundation, Emergent Groundwater'",
+      renderer: { type: "simple", symbol: { type: "simple-fill", color: [...TIDAL_COLOR, 0.85],
+                  outline: { color: [0, 0, 0, 0], width: 0 } } }
+    },
+    surge: {
+      title: "Storm surge (100-year)",
+      where: "Hazard_Type LIKE '%Storm Surge%'",
+      renderer: { type: "simple", symbol: { type: "simple-fill", style: "backward-diagonal", color: [...SURGE_COLOR, 1],
+                  outline: { color: [...SURGE_COLOR, 0.9], width: 0.6 } } }
     }
-  }));
-  const layerFor = (sc) => hazardLayers[CONFIG.scenarios.indexOf(sc)];
+  };
+  const VIEW_ORDER = ["combined", "gw", "tidal", "surge"];   // bottom to top
+
+  const layers = {};   // layers[scenarioId][viewKey] = FeatureLayer
+  const hazardLayers = [];
+  CONFIG.scenarios.forEach((sc) => {
+    layers[sc.id] = {};
+    VIEW_ORDER.forEach((key) => {
+      const v = VIEWS[key];
+      const props = {
+        url: `${CONFIG.serviceUrl}/${sc.id}`,
+        title: `${v.title}: ${sc.label} (${sc.sub})`,
+        visible: false,
+        opacity: Number($("opacity").value),
+        outFields: ["Hazard_Type"],
+        definitionExpression: v.where,
+        popupTemplate: {
+          title: "{Hazard_Type}",
+          content: `<b>Scenario:</b> ${sc.label} (${sc.sub})<br>` +
+                   `<span style="color:#666">BCDC RSAP Coastal Flood Hazards. Planning-level data.</span>`
+        }
+      };
+      if (v.renderer) props.renderer = v.renderer;
+      const lyr = new FeatureLayer(props);
+      layers[sc.id][key] = lyr;
+      hazardLayers.push(lyr);
+    });
+  });
+  // Draw order: all combined layers first, then groundwater, tidal, surge on top
+  hazardLayers.sort((a, b) => VIEW_ORDER.indexOf(viewKeyOf(a)) - VIEW_ORDER.indexOf(viewKeyOf(b)));
+  function viewKeyOf(lyr) {
+    for (const id in layers) for (const k in layers[id]) if (layers[id][k] === lyr) return k;
+  }
+  const viewOn = (key) => $("lyr_" + key).checked;
+
+  function updateVisibility() {
+    CONFIG.scenarios.forEach((sc) => {
+      VIEW_ORDER.forEach((key) => { layers[sc.id][key].visible = (sc === active) && viewOn(key); });
+    });
+    renderLegend();
+  }
 
   /* ---------- The clip: a county-shaped mask with "destination-in" ----------
      Inside a GroupLayer, a layer with blendMode "destination-in" keeps only the
@@ -191,11 +289,38 @@ require([
   });
   view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
 
-  const legend = new Legend({
-    view,
-    container: "legendDiv",
-    layerInfos: [{ layer: layerFor(active), title: "" }]
+  /* ---------- Map legend (reflects whatever is switched on) ---------- */
+  const legendEl = document.createElement("div");
+  legendEl.id = "mapLegend";
+  legendEl.innerHTML = `<button class="lg-head" type="button" aria-expanded="true">Legend <span>▾</span></button>
+                        <div class="lg-body"></div>`;
+  legendEl.querySelector(".lg-head").addEventListener("click", () => {
+    const c = legendEl.classList.toggle("collapsed");
+    legendEl.querySelector(".lg-head").setAttribute("aria-expanded", String(!c));
+    legendEl.querySelector(".lg-head span").textContent = c ? "▸" : "▾";
   });
+  view.ui.add(legendEl, "bottom-right");
+  if (window.matchMedia("(max-width: 760px)").matches) legendEl.querySelector(".lg-head").click();
+
+  function renderLegend() {
+    const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+    const item = (swatch, label) => `<div class="lg-item">${swatch}<span>${label}</span></div>`;
+    const fill = (c, a) => `<span class="sw" style="background:${rgba(c, a)}"></span>`;
+    let html = `<div style="color:var(--muted);margin-bottom:2px">${active.label} (${active.sub})</div>`;
+    if (viewOn("surge")) html += `<h3>Storm surge</h3>` + item(`<span class="sw hatch"></span>`, "100-year storm surge area");
+    if (viewOn("tidal")) html += `<h3>Tidal inundation</h3>` + item(fill(TIDAL_COLOR, 0.85), "Daily high tide (MHHW)");
+    if (viewOn("gw")) html += `<h3>Groundwater</h3>` + GW_CLASSES.map((c) => item(fill(c.color, 0.8), c.label)).join("");
+    if (viewOn("combined")) {
+      html += `<h3>Combined hazards</h3>` + COMBINED_LEGEND
+        .filter((c) => !c.bay || $("showBay").checked)
+        .map((c) => item(fill(c.color, 0.75), c.label)).join("");
+    }
+    if (!["combined", "gw", "tidal", "surge"].some(viewOn)) html += `<div class="lg-item">No hazard layers switched on.</div>`;
+    html += `<h3>Boundaries</h3>`;
+    if ($("showOutline").checked) html += item(`<span class="sw line"></span>`, "San Mateo County");
+    if (excluded.size) html += item(`<span class="sw dash"></span>`, "Clipped-out area");
+    legendEl.querySelector(".lg-body").innerHTML = html;
+  }
 
   // No popups for clicks outside the county (those features are hidden by the mask)
   view.on("click", (event) => {
@@ -217,8 +342,7 @@ require([
 
   function selectScenario(sc) {
     active = sc;
-    hazardLayers.forEach((l) => { l.visible = (l === layerFor(sc)); });
-    legend.layerInfos = [{ layer: layerFor(sc), title: "" }];
+    updateVisibility();
     view.closePopup ? view.closePopup() : view.popup.close();
     $("summary").innerHTML = "";
   }
@@ -227,9 +351,11 @@ require([
     hazardLayers.forEach((l) => { l.opacity = Number(e.target.value); });
   });
   $("showBay").addEventListener("change", (e) => {
-    hazardLayers.forEach((l) => { l.definitionExpression = e.target.checked ? null : BAY_EXPR; });
+    CONFIG.scenarios.forEach((sc) => { layers[sc.id].combined.definitionExpression = e.target.checked ? null : BAY_EXPR; });
+    renderLegend();
   });
-  $("showOutline").addEventListener("change", (e) => { outlineLayer.visible = e.target.checked; });
+  $("showOutline").addEventListener("change", (e) => { outlineLayer.visible = e.target.checked; renderLegend(); });
+  VIEW_ORDER.forEach((key) => $("lyr_" + key).addEventListener("change", updateVisibility));
   $("imagery").addEventListener("change", (e) => {
     map.basemap = e.target.checked ? CONFIG.altBasemap : CONFIG.basemap;
   });
@@ -288,6 +414,7 @@ require([
       }));
     });
     $("summary").innerHTML = "";
+    renderLegend();
   }
 
   // Exclusion toggles
@@ -306,6 +433,7 @@ require([
     ex._box = box;
   });
 
+  updateVisibility();
   const countyReady = loadPolygon(CONFIG.boundary);
   CONFIG.exclusions.forEach((ex) => {
     loadPolygon(ex).then(async (poly) => {
