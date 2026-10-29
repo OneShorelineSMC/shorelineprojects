@@ -63,6 +63,9 @@
     <label class="row"><input id="showBay" type="checkbox" checked> Show “Existing Bay”</label>
     <label class="row"><input id="showOutline" type="checkbox" checked> Show county outline</label>
 
+    <h2>Exclude areas</h2>
+    <div id="exclusions"></div>
+
     <h2>Legend</h2>
     <div id="legendDiv"></div>
 
@@ -74,7 +77,7 @@
     <p class="note">
       Data: <a href="https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer" target="_blank" rel="noopener">BCDC RSAP Coastal Flood Hazards</a>
       (BCDC, USGS CoSMoS, ART). County boundary: U.S. Census TIGERweb.
-      Layers are clipped on the fly in your browser; the source data is not modified.
+      Layers are clipped on the fly in your browser; the source data is not modified. City limits: U.S. Census TIGERweb.
       Planning-level data, not for project design.
     </p>
   </aside>
@@ -102,6 +105,19 @@ const CONFIG = {
     // e.g. "data/boundary.geojson" (WGS84 lon/lat). When set, it is used instead.
     geojsonUrl: null
   },
+  // Areas that can be clipped out with a toggle. Add more cities by copying an entry
+  // (Census place GEOIDs are "06" + the 5-digit place code), or use geojsonUrl instead of url/where.
+  exclusions: [
+    {
+      id: "foster",
+      label: "Clip out Foster City",
+      url: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4",
+      where: "GEOID = '0625338'",
+      geojsonUrl: null,
+      file: "excl_foster_city",
+      startOn: false
+    }
+  ],
   basemap: "gray-vector",
   altBasemap: "hybrid"
 };
@@ -132,6 +148,9 @@ require([
 
   let active = CONFIG.scenarios[0];
   let countyWM = null;           // county polygon in Web Mercator
+  let areaWM = null;             // county minus any excluded areas (what is shown/exported)
+  const exclusionGeoms = {};     // exclusion id -> polygon in Web Mercator
+  const excluded = new Set();    // exclusion ids currently switched on
   const BAY_EXPR = "Hazard_Type <> 'Existing Bay'";
 
   /* ---------- Hazard layers (live from the BCDC service) ---------- */
@@ -181,7 +200,7 @@ require([
 
   // No popups for clicks outside the county (those features are hidden by the mask)
   view.on("click", (event) => {
-    if (countyWM && !geometryEngine.contains(countyWM, event.mapPoint)) {
+    if (areaWM && !geometryEngine.contains(areaWM, event.mapPoint)) {
       event.stopPropagation();
     }
   });
@@ -213,11 +232,11 @@ require([
   });
   $("showOutline").addEventListener("change", (e) => { outlineLayer.visible = e.target.checked; });
 
-  /* ---------- County boundary ---------- */
-  async function loadBoundary() {
+  /* ---------- Boundaries (county + optional exclusion areas) ---------- */
+  async function loadPolygon(src) {
     let geo;
-    if (CONFIG.boundary.geojsonUrl) {
-      const gj = await (await fetch(CONFIG.boundary.geojsonUrl)).json();
+    if (src.geojsonUrl) {
+      const gj = await (await fetch(src.geojsonUrl)).json();
       const feats = gj.type === "FeatureCollection" ? gj.features : [gj.type === "Feature" ? gj : { geometry: gj }];
       const rings = [];
       feats.forEach((f) => {
@@ -228,8 +247,8 @@ require([
       });
       geo = geometryEngine.simplify(new Polygon({ rings, spatialReference: { wkid: 4326 } }));
     } else {
-      const fs = await query.executeQueryJSON(CONFIG.boundary.url, {
-        where: CONFIG.boundary.where,
+      const fs = await query.executeQueryJSON(src.url, {
+        where: src.where,
         outFields: ["NAME"],
         returnGeometry: true,
         outSpatialReference: { wkid: 4326 }
@@ -241,16 +260,67 @@ require([
     return webMercatorUtils.geographicToWebMercator(geo);
   }
 
-  loadBoundary().then((poly) => {
-    countyWM = poly;
+  // Recompute "county minus excluded areas" and redraw the mask and outlines
+  function rebuildArea() {
+    let g = countyWM;
+    excluded.forEach((id) => {
+      if (exclusionGeoms[id] && g) g = geometryEngine.difference(g, exclusionGeoms[id]);
+    });
+    areaWM = g;
+    maskLayer.removeAll();
     maskLayer.add(new Graphic({
-      geometry: poly,
+      geometry: areaWM,
       symbol: { type: "simple-fill", color: [0, 0, 0, 1], outline: { color: [0, 0, 0, 0], width: 0 } }
     }));
+    outlineLayer.removeAll();
     outlineLayer.add(new Graphic({
-      geometry: poly,
+      geometry: countyWM,
       symbol: { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: [36, 65, 97, 0.9], width: 1.6 } }
     }));
+    excluded.forEach((id) => {
+      if (!exclusionGeoms[id]) return;
+      outlineLayer.add(new Graphic({
+        geometry: exclusionGeoms[id],
+        symbol: { type: "simple-fill", color: [120, 120, 120, 0.12],
+                  outline: { color: [90, 90, 90, 0.9], width: 1.2, style: "dash" } }
+      }));
+    });
+    $("summary").innerHTML = "";
+  }
+
+  // Exclusion toggles
+  const exWrap = $("exclusions");
+  CONFIG.exclusions.forEach((ex) => {
+    const lab = document.createElement("label");
+    lab.className = "row";
+    lab.innerHTML = `<input type="checkbox" disabled ${ex.startOn ? "checked" : ""}> ${ex.label}`;
+    const box = lab.querySelector("input");
+    box.addEventListener("change", () => {
+      box.checked ? excluded.add(ex.id) : excluded.delete(ex.id);
+      if (countyWM) rebuildArea();
+    });
+    exWrap.appendChild(lab);
+    if (ex.startOn) excluded.add(ex.id);
+    ex._box = box;
+  });
+
+  const countyReady = loadPolygon(CONFIG.boundary);
+  CONFIG.exclusions.forEach((ex) => {
+    loadPolygon(ex).then(async (poly) => {
+      exclusionGeoms[ex.id] = poly;
+      ex._box.disabled = false;
+      await countyReady.catch(() => {});
+      if (countyWM && excluded.has(ex.id)) rebuildArea();
+    }).catch((err) => {
+      console.error(err);
+      ex._box.parentElement.title = "Couldn't load this boundary: " + err.message;
+      ex._box.parentElement.style.opacity = 0.5;
+    });
+  });
+
+  countyReady.then((poly) => {
+    countyWM = poly;
+    rebuildArea();
     hazardGroup.visible = true;
     $("exportBtn").disabled = false;
     setStatus("");
@@ -272,7 +342,11 @@ require([
       // A slightly enlarged, simplified county shape keeps the request small
       // while still catching every feature that touches the real boundary.
       const searchArea = geometryEngine.generalize(
-        geometryEngine.buffer(countyWM, 300, "meters"), 100, true, "meters");
+        geometryEngine.buffer(areaWM, 300, "meters"), 100, true, "meters");
+      const clipArea = areaWM;   // freeze the current toggles for this export
+      const exParts = CONFIG.exclusions.filter((ex) => excluded.has(ex.id) && exclusionGeoms[ex.id]);
+      const suffix = exParts.map((ex) => "_" + ex.file).join("");
+      const exNote = exParts.length ? " excluding " + exParts.map((ex) => ex.label.replace(/^Clip out /, "")).join(", ") : "";
       const where = $("showBay").checked ? "1=1" : BAY_EXPR;
       const url = `${CONFIG.serviceUrl}/${sc.id}`;
 
@@ -303,7 +377,7 @@ require([
         setStatus(`Clipping to San Mateo… ${i + 1} of ${features.length}`);
         await new Promise((r) => setTimeout(r, 0));   // keep the page responsive
         const f = features[i];
-        const clipped = geometryEngine.intersect(f.geometry, countyWM);
+        const clipped = geometryEngine.intersect(f.geometry, clipArea);
         if (!clipped || !clipped.rings || clipped.rings.length === 0) continue;
         const acres = geometryEngine.geodesicArea(clipped, "acres");
         const type = f.attributes.Hazard_Type;
@@ -313,6 +387,7 @@ require([
           properties: {
             Hazard_Type: type,
             Scenario: `${sc.label} (${sc.sub})`,
+            Area: "San Mateo County" + exNote,
             Acres_in_San_Mateo: Math.round(acres * 100) / 100
           },
           geometry: toGeoJSON(webMercatorUtils.webMercatorToGeographic(clipped))
@@ -321,17 +396,17 @@ require([
 
       const fc = {
         type: "FeatureCollection",
-        name: `san_mateo_rsap_${sc.file}`,
+        name: `san_mateo_rsap_${sc.file}${suffix}`,
         features: out
       };
       const blob = new Blob([JSON.stringify(fc)], { type: "application/geo+json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `san_mateo_rsap_${sc.file}.geojson`;
+      a.download = `san_mateo_rsap_${sc.file}${suffix}.geojson`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 
-      renderSummary(sc, acresByType);
+      renderSummary(sc, acresByType, exNote);
       setStatus(`Downloaded ${out.length} clipped features (WGS84).`);
     } catch (err) {
       console.error(err);
@@ -341,11 +416,12 @@ require([
     }
   }
 
-  function renderSummary(sc, acresByType) {
+  function renderSummary(sc, acresByType, exNote) {
     const rows = Object.entries(acresByType).sort((a, b) => b[1] - a[1]);
     const fmt = (n) => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     $("summary").innerHTML =
+      (exNote ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">San Mateo County${esc(exNote)}</div>` : "") +
       `<table><tr><th>${esc(sc.label)} hazard type</th><th class="num">Acres</th></tr>` +
       rows.map(([t, v]) => `<tr><td>${esc(t)}</td><td class="num">${fmt(v)}</td></tr>`).join("") +
       `</table>`;

@@ -32,6 +32,7 @@ The BCDC layers have no county field, so the filter is spatial:
 Everything adjustable is in the `CONFIG` block near the top of the `<script>`:
 
 - **Use your own boundary** (a city, planning area, or a different county line): export it as GeoJSON in WGS84, upload it to the repo (e.g. `data/boundary.geojson`), and set `geojsonUrl: "data/boundary.geojson"`.
+- **Exclude areas**: the "Clip out Foster City" toggle cuts Foster City's limits out of the map, popups, and export (the export filename gets `_excl_foster_city`). To add another city, copy its entry in `exclusions` and change `id`, `label`, `file`, and the place GEOID (`"06"` + the city's 5-digit Census place code). Set `startOn: true` to have it clipped by default.
 - **Another county**: change `where` to that county's FIPS code, e.g. `"GEOID = '06001'"` for Alameda.
 - **Basemaps**: change `basemap` / `altBasemap` (e.g. `"topo-vector"`, `"satellite"`, `"osm"`).
 
