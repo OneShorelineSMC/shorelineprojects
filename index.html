@@ -149,6 +149,16 @@ const CONFIG = {
       geojsonUrl: null,
       file: "excl_foster_city",
       startOn: false
+    },
+    {
+      id: "sfo",
+      label: "Clip out SFO airport",
+      // Airport footprint from BCDC's Transportation layer (Airports, Caltrans 2024)
+      url: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/Transportation_and_Transit_Strategic_Regional_Priorities/FeatureServer/15",
+      where: "AirportID = 'SFO' OR Facility LIKE '%San Francisco Int%'",
+      geojsonUrl: null,
+      file: "excl_sfo",
+      startOn: false
     }
   ],
   // FEMA National Flood Hazard Layer, Flood Hazard Zones (S_FLD_HAZ_AR)
@@ -557,7 +567,7 @@ require([
     } else {
       const fs = await query.executeQueryJSON(src.url, {
         where: src.where,
-        outFields: ["NAME"],
+        outFields: [],
         returnGeometry: true,
         outSpatialReference: { wkid: 4326 }
       });
