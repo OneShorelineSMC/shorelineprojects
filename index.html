@@ -54,6 +54,8 @@
     .lg-item { display: flex; align-items: center; gap: 8px; margin: 3px 0; line-height: 1.25; }
     .sw { flex: none; width: 18px; height: 14px; border: 1px solid rgba(0,0,0,.25); border-radius: 2px; }
     .sw.hatch { background: repeating-linear-gradient(45deg, #1565c0 0 1.5px, transparent 1.5px 5px); border-color: #1565c0; }
+    .sw.fema100 { background: rgba(196,30,58,.35); border: 1.5px solid rgb(196,30,58); }
+    .sw.fema500 { background: rgba(196,30,58,.10); border: 1.5px dashed rgb(196,30,58); }
     .sw.line { height: 0; border: 0; border-top: 2px solid #244161; }
     .sw.dash { height: 0; border: 0; border-top: 2px dashed #5a5a5a; }
     @media (max-width: 760px) { #mapLegend { width: 210px; max-height: 35vh; } }
@@ -79,6 +81,11 @@
     <label class="row"><input id="lyr_gw" type="checkbox"> Groundwater (emergent &amp; shallow)</label>
     <p class="hint">Each layer shows the BCDC areas that include that hazard. Storm surge draws as hatching so you can see what's under it.</p>
 
+    <h2>FEMA flood zones (effective FIRM)</h2>
+    <label class="row"><input id="fema100" type="checkbox"> 100-year floodplain (1% annual chance)</label>
+    <label class="row"><input id="fema500" type="checkbox"> 500-year floodplain (0.2% annual chance)</label>
+    <p class="hint">Current FEMA maps, not sea level rise scenarios. FEMA's server can be slow, so give these a few seconds to draw.</p>
+
     <h2>Display</h2>
     <label class="row">Opacity <input id="opacity" type="range" min="0.2" max="1" step="0.05" value="0.85"></label>
     <label class="row"><input id="showBay" type="checkbox" checked> Show “Existing Bay”</label>
@@ -95,7 +102,7 @@
 
     <p class="note">
       Data: <a href="https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer" target="_blank" rel="noopener">BCDC RSAP Coastal Flood Hazards</a>
-      (BCDC, USGS CoSMoS, ART). County boundary: U.S. Census TIGERweb.
+      (BCDC, USGS CoSMoS, ART). FEMA National Flood Hazard Layer. County boundary: U.S. Census TIGERweb.
       Layers are clipped on the fly in your browser; the source data is not modified. City limits: U.S. Census TIGERweb.
       Planning-level data, not for project design.
     </p>
@@ -137,6 +144,13 @@ const CONFIG = {
       startOn: false
     }
   ],
+  // FEMA National Flood Hazard Layer, Flood Hazard Zones (S_FLD_HAZ_AR)
+  fema: {
+    url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+    where100: "SFHA_TF = 'T'",                                    // zones A, AE, AH, AO, AR, A99, V, VE
+    where500: "FLD_ZONE = 'X' AND (ZONE_SUBTY LIKE '0.2 PCT%' OR ZONE_SUBTY LIKE '%LEVEE%')",
+    minScale: 1000000                                             // drawn when zoomed in past ~1:1,000,000
+  },
   basemap: "gray-vector",
   altBasemap: "hybrid"
 };
@@ -271,10 +285,36 @@ require([
      pixels of the layers beneath it that fall under its own shapes. Drawing the
      county polygon there shows hazards inside San Mateo and nothing outside,
      while the basemap (outside the group) stays visible everywhere. */
+  /* ---------- FEMA flood zones (same for every scenario) ---------- */
+  const femaPopup = {
+    title: "FEMA Zone {FLD_ZONE}",
+    content: "<b>Subtype:</b> {ZONE_SUBTY}<br><b>Special Flood Hazard Area:</b> {SFHA_TF}<br>" +
+             "<b>Static BFE:</b> {STATIC_BFE}<br>" +
+             "<span style='color:#666'>FEMA National Flood Hazard Layer (effective FIRM).</span>"
+  };
+  const fema500 = new FeatureLayer({
+    url: CONFIG.fema.url, title: "FEMA 500-year floodplain", visible: false,
+    definitionExpression: CONFIG.fema.where500, minScale: CONFIG.fema.minScale,
+    outFields: ["FLD_ZONE", "ZONE_SUBTY", "SFHA_TF", "STATIC_BFE"], popupTemplate: femaPopup,
+    renderer: { type: "simple", symbol: { type: "simple-fill", color: [196, 30, 58, 0.10],
+                outline: { color: [196, 30, 58, 0.9], width: 1, style: "dash" } } }
+  });
+  const fema100 = new FeatureLayer({
+    url: CONFIG.fema.url, title: "FEMA 100-year floodplain", visible: false,
+    definitionExpression: CONFIG.fema.where100, minScale: CONFIG.fema.minScale,
+    outFields: ["FLD_ZONE", "ZONE_SUBTY", "SFHA_TF", "STATIC_BFE"], popupTemplate: femaPopup,
+    renderer: { type: "simple", symbol: { type: "simple-fill", color: [196, 30, 58, 0.35],
+                outline: { color: [196, 30, 58, 0.9], width: 1 } } }
+  });
+  [fema500, fema100].forEach((l) => l.load().catch((err) => {
+    console.error(err);
+    setStatus("Couldn't reach FEMA's flood map service. Try again later. (" + err.message + ")", true);
+  }));
+
   const maskLayer = new GraphicsLayer({ blendMode: "destination-in", listMode: "hide", legendEnabled: false });
   const hazardGroup = new GroupLayer({
     title: "Coastal flood hazards",
-    layers: [...hazardLayers, maskLayer],   // last = top, so the mask sits above the hazards
+    layers: [...hazardLayers, fema500, fema100, maskLayer],   // last = top, so the mask sits above everything it clips
     visible: false                          // shown once the boundary has loaded
   });
   const outlineLayer = new GraphicsLayer({ listMode: "hide" });
@@ -315,7 +355,13 @@ require([
         .filter((c) => !c.bay || $("showBay").checked)
         .map((c) => item(fill(c.color, 0.75), c.label)).join("");
     }
-    if (!["combined", "gw", "tidal", "surge"].some(viewOn)) html += `<div class="lg-item">No hazard layers switched on.</div>`;
+    if ($("fema100").checked || $("fema500").checked) {
+      html += `<h3>FEMA flood zones</h3>`;
+      if ($("fema100").checked) html += item(`<span class="sw fema100"></span>`, "100-year (1% annual chance)");
+      if ($("fema500").checked) html += item(`<span class="sw fema500"></span>`, "500-year (0.2% annual chance)");
+      if (view.scale > CONFIG.fema.minScale) html += `<div class="lg-item" style="color:var(--muted)">Zoom in to see FEMA zones.</div>`;
+    }
+    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked) html += `<div class="lg-item">No hazard layers switched on.</div>`;
     html += `<h3>Boundaries</h3>`;
     if ($("showOutline").checked) html += item(`<span class="sw line"></span>`, "San Mateo County");
     if (excluded.size) html += item(`<span class="sw dash"></span>`, "Clipped-out area");
@@ -356,6 +402,9 @@ require([
   });
   $("showOutline").addEventListener("change", (e) => { outlineLayer.visible = e.target.checked; renderLegend(); });
   VIEW_ORDER.forEach((key) => $("lyr_" + key).addEventListener("change", updateVisibility));
+  $("fema100").addEventListener("change", (e) => { fema100.visible = e.target.checked; renderLegend(); });
+  $("fema500").addEventListener("change", (e) => { fema500.visible = e.target.checked; renderLegend(); });
+  view.watch("scale", () => { if ($("fema100").checked || $("fema500").checked) renderLegend(); });
   $("imagery").addEventListener("change", (e) => {
     map.basemap = e.target.checked ? CONFIG.altBasemap : CONFIG.basemap;
   });
