@@ -410,7 +410,7 @@ require([
     legendEl.querySelector(".lg-head").setAttribute("aria-expanded", String(!c));
     legendEl.querySelector(".lg-head span").textContent = c ? "▸" : "▾";
   });
-  view.ui.add(legendEl, "bottom-right");
+  view.ui.add(legendEl, "top-right");
   if (window.matchMedia("(max-width: 760px)").matches) legendEl.querySelector(".lg-head").click();
 
   function renderLegend() {
