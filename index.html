@@ -56,6 +56,10 @@
     .sw.hatch { background: repeating-linear-gradient(45deg, #1565c0 0 1.5px, transparent 1.5px 5px); border-color: #1565c0; }
     .sw.fema100 { background: rgba(196,30,58,.35); border: 1.5px solid rgb(196,30,58); }
     .sw.fema500 { background: rgba(196,30,58,.10); border: 1.5px dashed rgb(196,30,58); }
+    .grp-head { display: flex; justify-content: space-between; align-items: baseline; margin: 10px 0 2px; font-weight: 600; font-size: 13px; }
+    .grp-head a { font-weight: 400; font-size: 12px; color: var(--accent); cursor: pointer; }
+    .infra label.row { font-size: 13px; margin: 4px 0; }
+    .lg-prev { flex: none; width: 22px; display: flex; justify-content: center; }
     .sw.line { height: 0; border: 0; border-top: 2px solid #244161; }
     .sw.dash { height: 0; border: 0; border-top: 2px dashed #5a5a5a; }
     @media (max-width: 760px) { #mapLegend { width: 210px; max-height: 35vh; } }
@@ -86,6 +90,9 @@
     <label class="row"><input id="fema500" type="checkbox"> 500-year floodplain (0.2% annual chance)</label>
     <p class="hint">Current FEMA maps, not sea level rise scenarios. FEMA's server can be slow, so give these a few seconds to draw.</p>
 
+    <h2>Regional priorities (BCDC RSAP)</h2>
+    <div id="infraControls" class="infra"></div>
+
     <h2>Display</h2>
     <label class="row">Opacity <input id="opacity" type="range" min="0.2" max="1" step="0.05" value="0.85"></label>
     <label class="row"><input id="showBay" type="checkbox" checked> Show “Existing Bay”</label>
@@ -102,7 +109,7 @@
 
     <p class="note">
       Data: <a href="https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer" target="_blank" rel="noopener">BCDC RSAP Coastal Flood Hazards</a>
-      (BCDC, USGS CoSMoS, ART). FEMA National Flood Hazard Layer. County boundary: U.S. Census TIGERweb.
+      (BCDC, USGS CoSMoS, ART). FEMA National Flood Hazard Layer. Transportation and critical infrastructure: BCDC RSAP Strategic Regional Priorities. County boundary: U.S. Census TIGERweb.
       Layers are clipped on the fly in your browser; the source data is not modified. City limits: U.S. Census TIGERweb.
       Planning-level data, not for project design.
     </p>
@@ -151,6 +158,35 @@ const CONFIG = {
     where500: "FLD_ZONE = 'X' AND (ZONE_SUBTY LIKE '0.2 PCT%' OR ZONE_SUBTY LIKE '%LEVEE%')",
     minScale: 1000000                                             // drawn when zoomed in past ~1:1,000,000
   },
+  // BCDC RSAP Strategic Regional Priorities. Each layer keeps BCDC's own symbols.
+  infraGroups: [
+    {
+      id: "transport", title: "Transportation & transit",
+      url: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/Transportation_and_Transit_Strategic_Regional_Priorities/FeatureServer",
+      layers: [
+        { id: 14, title: "Airport Priority Use Area (Bay Plan)" },
+        { id: 15, title: "Airports" },
+        { id: 16, title: "Ferry terminals" },
+        { id: 17, title: "Freight rail" },
+        { id: 18, title: "Highways" },
+        { id: 19, title: "Passenger rail" },
+        { id: 20, title: "Passenger rail stations" },
+        { id: 21, title: "Seaport Priority Use Areas (Bay Plan)" },
+        { id: 22, title: "Seaports" }
+      ]
+    },
+    {
+      id: "critical", title: "Critical infrastructure",
+      url: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/Critical_Infrastructure_Strategic_Regional_Priorities/FeatureServer",
+      layers: [
+        { id: 1,  title: "Wastewater treatment & wet weather facilities" },
+        { id: 2,  title: "Power plants" },
+        { id: 5,  title: "Healthcare facilities" },
+        { id: 8,  title: "Emergency operations centers" },
+        { id: 10, title: "Water-Related Industry Priority Use Area (Bay Plan)" }
+      ]
+    }
+  ],
   basemap: "gray-vector",
   altBasemap: "hybrid"
 };
@@ -166,9 +202,10 @@ require([
   "esri/geometry/geometryEngine",
   "esri/geometry/support/webMercatorUtils",
   "esri/rest/query",
+  "esri/symbols/support/symbolUtils",
   "esri/widgets/ScaleBar"
 ], function (Map, MapView, FeatureLayer, GraphicsLayer, GroupLayer, Graphic, Polygon,
-             geometryEngine, webMercatorUtils, query, ScaleBar) {
+             geometryEngine, webMercatorUtils, query, symbolUtils, ScaleBar) {
 
   const $ = (id) => document.getElementById(id);
   const statusEl = $("status");
@@ -311,10 +348,34 @@ require([
     setStatus("Couldn't reach FEMA's flood map service. Try again later. (" + err.message + ")", true);
   }));
 
+  /* ---------- BCDC regional priority layers (transportation, critical infrastructure) ---------- */
+  const infraLayers = [];   // { key, group, title, layer }
+  CONFIG.infraGroups.forEach((grp) => {
+    grp.layers.forEach((d) => {
+      const lyr = new FeatureLayer({ url: `${grp.url}/${d.id}`, title: d.title, visible: false, outFields: ["*"] });
+      lyr.when(() => {
+        // Popups listing the layer's own fields
+        lyr.popupTemplate = lyr.createPopupTemplate();
+        if (lyr.popupTemplate) lyr.popupTemplate.title = d.title;
+      }).catch((err) => console.error(d.title, err));
+      infraLayers.push({ key: `${grp.id}_${d.id}`, group: grp, title: d.title, layer: lyr });
+    });
+  });
+  // Draw areas first, then lines, then points, so points stay on top
+  const geomRank = { polygon: 0, polyline: 1, point: 2, multipoint: 2 };
+  const infraOrdered = infraLayers.map((x) => x.layer);
+  Promise.allSettled(infraOrdered.map((l) => l.load())).then(() => {
+    const sorted = infraOrdered.slice().sort((a, b) =>
+      (geomRank[a.geometryType] ?? 1) - (geomRank[b.geometryType] ?? 1));
+    const base = Math.min(...infraOrdered.map((l) => hazardGroup.layers.indexOf(l)));
+    sorted.forEach((l, i) => hazardGroup.layers.reorder(l, base + i));
+    hazardGroup.layers.reorder(maskLayer, hazardGroup.layers.length - 1);
+  });
+
   const maskLayer = new GraphicsLayer({ blendMode: "destination-in", listMode: "hide", legendEnabled: false });
   const hazardGroup = new GroupLayer({
     title: "Coastal flood hazards",
-    layers: [...hazardLayers, fema500, fema100, maskLayer],   // last = top, so the mask sits above everything it clips
+    layers: [...hazardLayers, fema500, fema100, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
     visible: false                          // shown once the boundary has loaded
   });
   const outlineLayer = new GraphicsLayer({ listMode: "hide" });
@@ -361,11 +422,56 @@ require([
       if ($("fema500").checked) html += item(`<span class="sw fema500"></span>`, "500-year (0.2% annual chance)");
       if (view.scale > CONFIG.fema.minScale) html += `<div class="lg-item" style="color:var(--muted)">Zoom in to see FEMA zones.</div>`;
     }
-    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked) html += `<div class="lg-item">No hazard layers switched on.</div>`;
+    const infraOn = infraLayers.filter((x) => x.layer.visible);
+    CONFIG.infraGroups.forEach((grp) => {
+      const on = infraOn.filter((x) => x.group === grp);
+      if (!on.length) return;
+      html += `<h3>${grp.title}</h3>` + on.map((x) => `<div class="lg-infra" data-key="${x.key}"></div>`).join("");
+    });
+    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked && !infraOn.length) html += `<div class="lg-item">No hazard layers switched on.</div>`;
     html += `<h3>Boundaries</h3>`;
     if ($("showOutline").checked) html += item(`<span class="sw line"></span>`, "San Mateo County");
     if (excluded.size) html += item(`<span class="sw dash"></span>`, "Clipped-out area");
     legendEl.querySelector(".lg-body").innerHTML = html;
+    legendEl.querySelectorAll(".lg-infra").forEach((el) => {
+      const x = infraLayers.find((i) => i.key === el.dataset.key);
+      if (x) fillInfraLegend(x, el);
+    });
+  }
+
+  // Legend entries for a BCDC layer, drawn from that layer's own symbols
+  const previewCache = {};
+  async function fillInfraLegend(x, el) {
+    try {
+      if (!previewCache[x.key]) {
+        await x.layer.when();
+        const r = x.layer.renderer;
+        let infos = [];
+        if (r && r.type === "simple") infos = [{ symbol: r.symbol, label: x.title }];
+        else if (r && r.uniqueValueInfos) infos = r.uniqueValueInfos.map((i) => ({ symbol: i.symbol, label: i.label || String(i.value) }));
+        else if (r && r.classBreakInfos) infos = r.classBreakInfos.map((i) => ({ symbol: i.symbol, label: i.label || "" }));
+        if (r && r.type !== "simple" && infos.length) infos = [{ header: x.title }, ...infos.slice(0, 10)];
+        const parts = [];
+        for (const i of infos) {
+          if (i.header) { parts.push(`<div class="lg-item" style="font-weight:600">${i.header}</div>`); continue; }
+          const node = await symbolUtils.renderPreviewHTML(i.symbol, { size: 14 });
+          const wrap = document.createElement("div");
+          wrap.className = "lg-item";
+          const prev = document.createElement("span");
+          prev.className = "lg-prev";
+          prev.appendChild(node);
+          const lab = document.createElement("span");
+          lab.textContent = i.label;
+          wrap.append(prev, lab);
+          parts.push(wrap.outerHTML);
+        }
+        previewCache[x.key] = parts.join("") || `<div class="lg-item">${x.title}</div>`;
+      }
+      el.innerHTML = previewCache[x.key];
+    } catch (err) {
+      console.error(err);
+      el.innerHTML = `<div class="lg-item">${x.title}</div>`;
+    }
   }
 
   // No popups for clicks outside the county (those features are hidden by the mask)
@@ -404,6 +510,31 @@ require([
   VIEW_ORDER.forEach((key) => $("lyr_" + key).addEventListener("change", updateVisibility));
   $("fema100").addEventListener("change", (e) => { fema100.visible = e.target.checked; renderLegend(); });
   $("fema500").addEventListener("change", (e) => { fema500.visible = e.target.checked; renderLegend(); });
+  const infraWrap = $("infraControls");
+  CONFIG.infraGroups.forEach((grp) => {
+    const head = document.createElement("div");
+    head.className = "grp-head";
+    head.innerHTML = `<span>${grp.title}</span><a role="button" tabindex="0">All</a>`;
+    infraWrap.appendChild(head);
+    const boxes = [];
+    infraLayers.filter((x) => x.group === grp).forEach((x) => {
+      const lab = document.createElement("label");
+      lab.className = "row";
+      lab.innerHTML = `<input type="checkbox"> ${x.title}`;
+      const box = lab.querySelector("input");
+      box.addEventListener("change", () => { x.layer.visible = box.checked; renderLegend(); });
+      x.box = box; boxes.push(box);
+      infraWrap.appendChild(lab);
+    });
+    const toggleAll = () => {
+      const turnOn = !boxes.every((b) => b.checked);
+      boxes.forEach((b) => { b.checked = turnOn; b.dispatchEvent(new Event("change")); });
+      head.querySelector("a").textContent = turnOn ? "None" : "All";
+    };
+    head.querySelector("a").addEventListener("click", toggleAll);
+    head.querySelector("a").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleAll(); } });
+  });
+
   view.watch("scale", () => { if ($("fema100").checked || $("fema500").checked) renderLegend(); });
   $("imagery").addEventListener("change", (e) => {
     map.basemap = e.target.checked ? CONFIG.altBasemap : CONFIG.basemap;
