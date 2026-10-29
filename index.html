@@ -59,7 +59,10 @@
     .grp-head { display: flex; justify-content: space-between; align-items: baseline; margin: 10px 0 2px; font-weight: 600; font-size: 13px; }
     .grp-head a { font-weight: 400; font-size: 12px; color: var(--accent); cursor: pointer; }
     .infra label.row { font-size: 13px; margin: 4px 0; }
-    .lg-prev { flex: none; width: 22px; display: flex; justify-content: center; }
+    .lg-prev { flex: none; width: 22px; height: 18px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .lg-prev > * { max-width: 22px; max-height: 18px; }
+    .lg-prev svg, .lg-prev img, .lg-prev canvas { max-width: 22px !important; max-height: 18px !important; }
+    .lg-sub { font-weight: 600; margin: 6px 0 2px; }
     .sw.line { height: 0; border: 0; border-top: 2px solid #244161; }
     .sw.dash { height: 0; border: 0; border-top: 2px dashed #5a5a5a; }
     @media (max-width: 760px) { #mapLegend { width: 210px; max-height: 35vh; } }
@@ -177,9 +180,9 @@ const CONFIG = {
         { id: 14, title: "Airport Priority Use Area (Bay Plan)" },
         { id: 15, title: "Airports" },
         { id: 16, title: "Ferry terminals" },
-        { id: 17, title: "Freight rail" },
-        { id: 18, title: "Highways" },
-        { id: 19, title: "Passenger rail" },
+        { id: 17, title: "Freight rail",   thin: true },
+        { id: 18, title: "Highways",       thin: true },
+        { id: 19, title: "Passenger rail", thin: true },
         { id: 20, title: "Passenger rail stations" },
         { id: 21, title: "Seaport Priority Use Areas (Bay Plan)" },
         { id: 22, title: "Seaports" }
@@ -195,8 +198,17 @@ const CONFIG = {
         { id: 8,  title: "Emergency operations centers" },
         { id: 10, title: "Water-Related Industry Priority Use Area (Bay Plan)" }
       ]
+    },
+    {
+      id: "oneshoreline", title: "OneShoreline",
+      layers: [
+        // ArcGIS Online item; its title, symbols and popup come from the item itself.
+        // It must be shared with Everyone (public) for the site to show it.
+        { portalUrl: "https://oneshoreline.maps.arcgis.com", itemId: "defe3431d7644a8bb0c676d937f3aaeb", layerId: 0 }
+      ]
     }
   ],
+  lineThinning: 0.6,   // "thin" layers draw at this fraction of BCDC's line width
   basemap: "gray-vector",
   altBasemap: "hybrid"
 };
@@ -213,9 +225,10 @@ require([
   "esri/geometry/support/webMercatorUtils",
   "esri/rest/query",
   "esri/symbols/support/symbolUtils",
+  "esri/symbols/support/cimSymbolUtils",
   "esri/widgets/ScaleBar"
 ], function (Map, MapView, FeatureLayer, GraphicsLayer, GroupLayer, Graphic, Polygon,
-             geometryEngine, webMercatorUtils, query, symbolUtils, ScaleBar) {
+             geometryEngine, webMercatorUtils, query, symbolUtils, cimSymbolUtils, ScaleBar) {
 
   const $ = (id) => document.getElementById(id);
   const statusEl = $("status");
@@ -361,16 +374,57 @@ require([
   /* ---------- BCDC regional priority layers (transportation, critical infrastructure) ---------- */
   const infraLayers = [];   // { key, group, title, layer }
   CONFIG.infraGroups.forEach((grp) => {
-    grp.layers.forEach((d) => {
-      const lyr = new FeatureLayer({ url: `${grp.url}/${d.id}`, title: d.title, visible: false, outFields: ["*"] });
-      lyr.when(() => {
-        // Popups listing the layer's own fields
-        lyr.popupTemplate = lyr.createPopupTemplate();
-        if (lyr.popupTemplate) lyr.popupTemplate.title = d.title;
-      }).catch((err) => console.error(d.title, err));
-      infraLayers.push({ key: `${grp.id}_${d.id}`, group: grp, title: d.title, layer: lyr });
+    grp.layers.forEach((d, n) => {
+      const lyr = d.itemId
+        ? new FeatureLayer({ portalItem: { id: d.itemId, portal: { url: d.portalUrl } }, layerId: d.layerId,
+                             visible: false, outFields: ["*"] })
+        : new FeatureLayer({ url: `${grp.url}/${d.id}`, title: d.title, visible: false, outFields: ["*"] });
+      const x = { key: `${grp.id}_${d.id ?? n}`, group: grp, title: d.title || "Loading…", layer: lyr };
+      x.ready = lyr.when(() => {
+        if (!d.title) setInfraTitle(x, lyr.title || "OneShoreline layer");
+        // Popups: keep the item's own popup if it has one, otherwise list the layer's fields
+        if (!lyr.popupTemplate) {
+          lyr.popupTemplate = lyr.createPopupTemplate();
+          if (lyr.popupTemplate) lyr.popupTemplate.title = x.title;
+        }
+        if (d.thin && lyr.geometryType === "polyline") lyr.renderer = thinRenderer(lyr.renderer);
+      }).catch((err) => {
+        console.error(x.title, err);
+        setInfraTitle(x, (d.title || "OneShoreline layer") + " (couldn't load)");
+        if (x.box) { x.box.disabled = true; x.box.parentElement.style.opacity = 0.5;
+                     x.box.parentElement.title = err.message; }
+      });
+      infraLayers.push(x);
     });
   });
+  function setInfraTitle(x, title) {
+    x.title = title;
+    if (x.labelText) x.labelText.textContent = " " + title;
+    if (x.layer.visible) renderLegend();
+  }
+
+  // Scale line symbols down (simple-line or CIM) for a lighter look
+  function thinSymbol(sym) {
+    if (!sym) return sym;
+    const k = CONFIG.lineThinning;
+    const c = sym.clone();
+    if (c.type === "simple-line") c.width = Math.max(1, c.width * k);
+    else if (c.type === "cim") {
+      const size = cimSymbolUtils.getCIMSymbolSize(c);
+      if (size) cimSymbolUtils.scaleCIMSymbolTo(c, Math.max(1, size * k));
+    }
+    return c;
+  }
+  function thinRenderer(r) {
+    if (!r) return r;
+    const c = r.clone();
+    if (c.symbol) c.symbol = thinSymbol(c.symbol);
+    if (c.defaultSymbol) c.defaultSymbol = thinSymbol(c.defaultSymbol);
+    (c.uniqueValueInfos || []).forEach((i) => { i.symbol = thinSymbol(i.symbol); });
+    (c.classBreakInfos || []).forEach((i) => { i.symbol = thinSymbol(i.symbol); });
+    return c;
+  }
+
   // Draw areas first, then lines, then points, so points stay on top
   const geomRank = { polygon: 0, polyline: 1, point: 2, multipoint: 2 };
   const infraOrdered = infraLayers.map((x) => x.layer);
@@ -450,41 +504,74 @@ require([
   }
 
   // Legend entries for a BCDC layer, drawn from that layer's own symbols
-  const previewCache = {};
+  function lineSwatch(sym) {
+    const c = sym.color ? sym.color.toRgba() : [0, 0, 0, 1];
+    const w = Math.min(4, Math.max(1.5, sym.width || 1.5));
+    const dash = sym.style && sym.style !== "solid" ? ' stroke-dasharray="4 3"' : "";
+    const span = document.createElement("span");
+    span.innerHTML = `<svg width="22" height="14" viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" ` +
+      `stroke="rgba(${c[0]},${c[1]},${c[2]},${c[3]})" stroke-width="${w}" stroke-linecap="round"${dash}/></svg>`;
+    return span.firstChild;
+  }
+  function fallbackSwatch() {
+    const span = document.createElement("span");
+    span.innerHTML = `<svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="#8a8f94" stroke="#fff" stroke-width="1"/></svg>`;
+    return span.firstChild;
+  }
+  async function previewNode(sym) {
+    if (!sym) return fallbackSwatch();
+    if (sym.type === "simple-line") return lineSwatch(sym);
+    try {
+      return await symbolUtils.renderPreviewHTML(sym, { size: 14, maxSize: 18 });
+    } catch (e) { return fallbackSwatch(); }
+  }
   async function fillInfraLegend(x, el) {
     try {
-      if (!previewCache[x.key]) {
-        await x.layer.when();
-        const r = x.layer.renderer;
-        let infos = [];
-        if (r && r.type === "simple") infos = [{ symbol: r.symbol, label: x.title }];
-        else if (r && r.uniqueValueInfos) infos = r.uniqueValueInfos.map((i) => ({ symbol: i.symbol, label: i.label || String(i.value) }));
-        else if (r && r.classBreakInfos) infos = r.classBreakInfos.map((i) => ({ symbol: i.symbol, label: i.label || "" }));
-        if (r && r.type !== "simple" && infos.length) infos = [{ header: x.title }, ...infos.slice(0, 10)];
-        const parts = [];
-        for (const i of infos) {
-          if (i.header) { parts.push(`<div class="lg-item" style="font-weight:600">${i.header}</div>`); continue; }
-          const node = await symbolUtils.renderPreviewHTML(i.symbol, { size: 14 });
-          const wrap = document.createElement("div");
-          wrap.className = "lg-item";
-          const prev = document.createElement("span");
-          prev.className = "lg-prev";
-          prev.appendChild(node);
-          const lab = document.createElement("span");
-          lab.textContent = i.label;
-          wrap.append(prev, lab);
-          parts.push(wrap.outerHTML);
-        }
-        previewCache[x.key] = parts.join("") || `<div class="lg-item">${x.title}</div>`;
+      await x.ready;
+      const r = x.layer.renderer;
+      let infos = [];
+      if (r && r.type === "simple") infos = [{ symbol: r.symbol, label: x.title }];
+      else if (r && r.uniqueValueInfos) infos = r.uniqueValueInfos.map((i) => ({ symbol: i.symbol, label: i.label || String(i.value) }));
+      else if (r && r.classBreakInfos) infos = r.classBreakInfos.map((i) => ({ symbol: i.symbol, label: i.label || "" }));
+      const frag = document.createDocumentFragment();
+      if (r && r.type !== "simple" && infos.length) {
+        const h = document.createElement("div");
+        h.className = "lg-sub"; h.textContent = x.title; frag.appendChild(h);
+        infos = infos.slice(0, 12);
       }
-      el.innerHTML = previewCache[x.key];
+      if (!infos.length) infos = [{ symbol: null, label: x.title }];
+      for (const i of infos) {
+        const row = document.createElement("div");
+        row.className = "lg-item";
+        const prev = document.createElement("span");
+        prev.className = "lg-prev";
+        prev.appendChild(await previewNode(i.symbol));
+        const lab = document.createElement("span");
+        lab.textContent = i.label;
+        row.append(prev, lab);
+        frag.appendChild(row);
+      }
+      el.replaceChildren(frag);
+      // If a symbol drew nothing (e.g. an icon that failed to load), show a neutral marker instead
+      requestAnimationFrame(() => {
+        el.querySelectorAll(".lg-prev").forEach((p) => {
+          const kid = p.firstElementChild;
+          const box = kid && kid.getBoundingClientRect();
+          if (!kid || box.width < 2 || box.height < 2) p.replaceChildren(fallbackSwatch());
+        });
+      });
     } catch (err) {
       console.error(err);
-      el.innerHTML = `<div class="lg-item">${x.title}</div>`;
+      el.innerHTML = "";
+      const row = document.createElement("div");
+      row.className = "lg-item";
+      const prev = document.createElement("span"); prev.className = "lg-prev"; prev.appendChild(fallbackSwatch());
+      const lab = document.createElement("span"); lab.textContent = x.title;
+      row.append(prev, lab); el.appendChild(row);
     }
   }
 
-  // No popups for clicks outside the county (those features are hidden by the mask)
+  // No popups for clicks outside the shown area (those features are hidden by the mask)
   view.on("click", (event) => {
     if (areaWM && !geometryEngine.contains(areaWM, event.mapPoint)) {
       event.stopPropagation();
@@ -530,8 +617,10 @@ require([
     infraLayers.filter((x) => x.group === grp).forEach((x) => {
       const lab = document.createElement("label");
       lab.className = "row";
-      lab.innerHTML = `<input type="checkbox"> ${x.title}`;
+      lab.innerHTML = `<input type="checkbox"><span></span>`;
       const box = lab.querySelector("input");
+      x.labelText = lab.querySelector("span");
+      x.labelText.textContent = " " + x.title;
       box.addEventListener("change", () => { x.layer.visible = box.checked; renderLegend(); });
       x.box = box; boxes.push(box);
       infraWrap.appendChild(lab);
