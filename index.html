@@ -90,6 +90,7 @@
     <h2>FEMA flood zones (effective FIRM)</h2>
     <label class="row"><input id="fema100" type="checkbox"> 100-year floodplain (1% annual chance)</label>
     <label class="row"><input id="fema500" type="checkbox"> 500-year floodplain (0.2% annual chance)</label>
+    <label class="row"><input id="femaLandOnly" type="checkbox" checked> Land only (hide FEMA zones over the Bay)</label>
     <p class="hint">Current FEMA maps, not sea level rise scenarios. FEMA's server can be slow, so give these a few seconds to draw.</p>
 
     <h2>Regional priorities (BCDC RSAP)</h2>
@@ -368,6 +369,33 @@ require([
     renderer: { type: "simple", symbol: { type: "simple-fill", color: [196, 30, 58, 0.35],
                 outline: { color: [196, 30, 58, 0.9], width: 1 } } }
   });
+  // Erases FEMA zones over open water, using BCDC's "Existing Bay" polygon from the hazard layers
+  const femaWaterMask = new GraphicsLayer({ blendMode: "destination-out", listMode: "hide", legendEnabled: false });
+  const femaGroup = new GroupLayer({ title: "FEMA flood zones", layers: [fema500, fema100, femaWaterMask] });
+  let bayLoading = null;
+  function ensureBayMask() {
+    if (!$("femaLandOnly").checked || bayLoading) return;
+    if (!$("fema100").checked && !$("fema500").checked) return;
+    bayLoading = query.executeQueryJSON(`${CONFIG.serviceUrl}/${CONFIG.scenarios[0].id}`, {
+      where: "Hazard_Type = 'Existing Bay'",
+      geometry: countyWM || undefined,
+      spatialRelationship: "intersects",
+      returnGeometry: true,
+      outSpatialReference: { wkid: 102100 },
+      maxAllowableOffset: 5            // simplify to ~5 m; plenty for a water mask
+    }).then((fs) => {
+      femaWaterMask.removeAll();
+      fs.features.forEach((f) => femaWaterMask.add(new Graphic({
+        geometry: f.geometry,
+        symbol: { type: "simple-fill", color: [0, 0, 0, 1], outline: { color: [0, 0, 0, 0], width: 0 } }
+      })));
+    }).catch((err) => {
+      console.error(err);
+      bayLoading = null;
+      setStatus("Couldn't load the Bay shoreline for the FEMA land-only option. (" + err.message + ")", true);
+    });
+  }
+
   [fema500, fema100].forEach((l) => l.load().catch((err) => {
     console.error(err);
     setStatus("Couldn't reach FEMA's flood map service. Try again later. (" + err.message + ")", true);
@@ -456,7 +484,7 @@ require([
   const maskLayer = new GraphicsLayer({ blendMode: "destination-in", listMode: "hide", legendEnabled: false });
   const hazardGroup = new GroupLayer({
     title: "Coastal flood hazards",
-    layers: [...hazardLayers, fema500, fema100, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
+    layers: [...hazardLayers, femaGroup, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
     visible: false                          // shown once the boundary has loaded
   });
   const outlineLayer = new GraphicsLayer({ listMode: "hide" });
@@ -501,6 +529,7 @@ require([
       html += `<h3>FEMA flood zones</h3>`;
       if ($("fema100").checked) html += item(`<span class="sw fema100"></span>`, "100-year (1% annual chance)");
       if ($("fema500").checked) html += item(`<span class="sw fema500"></span>`, "500-year (0.2% annual chance)");
+      if ($("femaLandOnly").checked) html += `<div class="lg-item" style="color:var(--muted)">Land only: zones over the Bay hidden.</div>`;
       if (view.scale > CONFIG.fema.minScale) html += `<div class="lg-item" style="color:var(--muted)">Zoom in to see FEMA zones.</div>`;
     }
     const infraOn = infraLayers.filter((x) => x.layer.visible);
@@ -622,8 +651,9 @@ require([
   });
   $("showOutline").addEventListener("change", (e) => { outlineLayer.visible = e.target.checked; renderLegend(); });
   VIEW_ORDER.forEach((key) => $("lyr_" + key).addEventListener("change", updateVisibility));
-  $("fema100").addEventListener("change", (e) => { fema100.visible = e.target.checked; renderLegend(); });
-  $("fema500").addEventListener("change", (e) => { fema500.visible = e.target.checked; renderLegend(); });
+  $("fema100").addEventListener("change", (e) => { fema100.visible = e.target.checked; ensureBayMask(); renderLegend(); });
+  $("fema500").addEventListener("change", (e) => { fema500.visible = e.target.checked; ensureBayMask(); renderLegend(); });
+  $("femaLandOnly").addEventListener("change", (e) => { femaWaterMask.visible = e.target.checked; ensureBayMask(); renderLegend(); });
   const infraWrap = $("infraControls");
   CONFIG.infraGroups.forEach((grp) => {
     const head = document.createElement("div");
