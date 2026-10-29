@@ -62,6 +62,7 @@
     <label class="row">Opacity <input id="opacity" type="range" min="0.2" max="1" step="0.05" value="0.85"></label>
     <label class="row"><input id="showBay" type="checkbox" checked> Show “Existing Bay”</label>
     <label class="row"><input id="showOutline" type="checkbox" checked> Show county outline</label>
+    <label class="row"><input id="imagery" type="checkbox"> Satellite imagery (hybrid basemap)</label>
 
     <h2>Exclude areas</h2>
     <div id="exclusions"></div>
@@ -134,10 +135,9 @@ require([
   "esri/geometry/support/webMercatorUtils",
   "esri/rest/query",
   "esri/widgets/Legend",
-  "esri/widgets/BasemapToggle",
   "esri/widgets/ScaleBar"
 ], function (Map, MapView, FeatureLayer, GraphicsLayer, GroupLayer, Graphic, Polygon,
-             geometryEngine, webMercatorUtils, query, Legend, BasemapToggle, ScaleBar) {
+             geometryEngine, webMercatorUtils, query, Legend, ScaleBar) {
 
   const $ = (id) => document.getElementById(id);
   const statusEl = $("status");
@@ -189,7 +189,6 @@ require([
     zoom: 10,
     popup: { dockEnabled: false }
   });
-  view.ui.add(new BasemapToggle({ view, nextBasemap: CONFIG.altBasemap }), "bottom-right");
   view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
 
   const legend = new Legend({
@@ -231,6 +230,9 @@ require([
     hazardLayers.forEach((l) => { l.definitionExpression = e.target.checked ? null : BAY_EXPR; });
   });
   $("showOutline").addEventListener("change", (e) => { outlineLayer.visible = e.target.checked; });
+  $("imagery").addEventListener("change", (e) => {
+    map.basemap = e.target.checked ? CONFIG.altBasemap : CONFIG.basemap;
+  });
 
   /* ---------- Boundaries (county + optional exclusion areas) ---------- */
   async function loadPolygon(src) {
