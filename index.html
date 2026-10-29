@@ -204,7 +204,8 @@ const CONFIG = {
       layers: [
         // ArcGIS Online item; its title, symbols and popup come from the item itself.
         // It must be shared with Everyone (public) for the site to show it.
-        { portalUrl: "https://oneshoreline.maps.arcgis.com", itemId: "defe3431d7644a8bb0c676d937f3aaeb", layerId: 0 }
+        { portalUrl: "https://oneshoreline.maps.arcgis.com", itemId: "defe3431d7644a8bb0c676d937f3aaeb", layerId: 0,
+          color: [72, 229, 83] }   // bright green; remove this line to use the item's own symbols
       ]
     }
   ],
@@ -388,6 +389,7 @@ require([
           if (lyr.popupTemplate) lyr.popupTemplate.title = x.title;
         }
         if (d.thin && lyr.geometryType === "polyline") lyr.renderer = thinRenderer(lyr.renderer);
+        if (d.color) lyr.renderer = solidRenderer(lyr.geometryType, d.color);
       }).catch((err) => {
         console.error(x.title, err);
         setInfraTitle(x, (d.title || "OneShoreline layer") + " (couldn't load)");
@@ -397,6 +399,20 @@ require([
       infraLayers.push(x);
     });
   });
+  // One-color symbol for a layer, matched to its geometry
+  function solidRenderer(geomType, rgb) {
+    let symbol;
+    if (geomType === "polygon") {
+      symbol = { type: "simple-fill", color: [...rgb, 0.15], outline: { color: [...rgb, 1], width: 2 } };
+    } else if (geomType === "polyline") {
+      symbol = { type: "simple-line", color: [...rgb, 1], width: 2.5 };
+    } else {
+      symbol = { type: "simple-marker", style: "circle", size: 9, color: [...rgb, 1],
+                 outline: { color: [255, 255, 255, 1], width: 1 } };
+    }
+    return { type: "simple", symbol };
+  }
+
   function setInfraTitle(x, title) {
     x.title = title;
     if (x.labelText) x.labelText.textContent = " " + title;
