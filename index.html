@@ -85,7 +85,7 @@
     <label class="row"><input id="lyr_tidal" type="checkbox"> Tidal inundation (MHHW)</label>
     <label class="row"><input id="lyr_surge" type="checkbox"> Storm surge (100-year)</label>
     <label class="row"><input id="lyr_gw" type="checkbox"> Groundwater (emergent &amp; shallow)</label>
-    <p class="hint">Each layer shows the BCDC areas that include that hazard. Storm surge sits underneath the others; turn off groundwater to see its full extent.</p>
+    <p class="hint">Each layer shows the BCDC areas that include that hazard. Storm surge draws as a blue outline on top, so the tidal and groundwater layers stay visible inside it.</p>
 
     <h2>FEMA flood zones (effective FIRM)</h2>
     <label class="row"><input id="fema100" type="checkbox"> 100-year floodplain (1% annual chance)</label>
@@ -249,7 +249,8 @@ require([
        combined - BCDC's own combined-hazard symbology
        gw       - every area with a groundwater component, colored by depth
        tidal    - daily tidal inundation (MHHW)
-       surge    - every area with 100-year storm surge, light sky-blue fill, drawn beneath the others
+       surge    - every area with 100-year storm surge: sky-blue outline with a light tint, drawn on top
+                  (it overlaps the MHHW areas, so a solid fill would hide them)
      Only the views that are switched on (for the active scenario) are drawn. */
   const GW_CLASSES = [
     { value: "emergent", label: "Emergent (at the surface)",        color: [140, 45, 4] },
@@ -259,7 +260,7 @@ require([
   ];
   const TIDAL_COLOR = [31, 78, 121];
   const SURGE_COLOR = [64, 170, 214];        // light sky blue: between the pale Bay and the navy tidal layer
-  const SURGE_EDGE  = [30, 112, 160];
+  const SURGE_EDGE  = [24, 132, 196];
   const COMBINED_LEGEND = [   // matches BCDC's renderer for these layers
     { label: "Tidal inundation (MHHW), emergent groundwater",        color: [36, 65, 97] },
     { label: "Storm surge (100-yr)",                                 color: [68, 100, 135] },
@@ -296,11 +297,11 @@ require([
     surge: {
       title: "Storm surge (100-year)",
       where: "Hazard_Type LIKE '%Storm Surge%'",
-      renderer: { type: "simple", symbol: { type: "simple-fill", color: [...SURGE_COLOR, 0.55],
-                  outline: { color: [...SURGE_EDGE, 0.7], width: 0.6 } } }
+      renderer: { type: "simple", symbol: { type: "simple-fill", color: [...SURGE_COLOR, 0.18],
+                  outline: { color: [...SURGE_EDGE, 1], width: 1.6 } } }
     }
   };
-  const VIEW_ORDER = ["combined", "surge", "gw", "tidal"];   // bottom to top: surge is the broadest, so it sits underneath
+  const VIEW_ORDER = ["combined", "gw", "tidal", "surge"];   // bottom to top: surge outline on top so nothing hides it
 
   const layers = {};   // layers[scenarioId][viewKey] = FeatureLayer
   const hazardLayers = [];
@@ -489,7 +490,7 @@ require([
     const fill = (c, a) => `<span class="sw" style="background:${rgba(c, a)}"></span>`;
     let html = `<div style="color:var(--muted);margin-bottom:2px">${active.label} (${active.sub})</div>`;
     if (viewOn("tidal")) html += `<h3>Tidal inundation</h3>` + item(fill(TIDAL_COLOR, 0.85), "Daily high tide (MHHW)");
-    if (viewOn("surge")) html += `<h3>Storm surge</h3>` + item(`<span class="sw" style="background:${rgba(SURGE_COLOR, 0.55)};border-color:${rgba(SURGE_EDGE, 0.8)}"></span>`, "100-year storm surge area");
+    if (viewOn("surge")) html += `<h3>Storm surge</h3>` + item(`<span class="sw" style="background:${rgba(SURGE_COLOR, 0.18)};border:2px solid ${rgba(SURGE_EDGE, 1)}"></span>`, "100-year storm surge area (includes MHHW areas)");
     if (viewOn("gw")) html += `<h3>Groundwater</h3>` + GW_CLASSES.map((c) => item(fill(c.color, 0.8), c.label)).join("");
     if (viewOn("combined")) {
       html += `<h3>Combined hazards</h3>` + COMBINED_LEGEND
