@@ -42,6 +42,26 @@
     td.num, th.num { text-align: right; white-space: nowrap; }
     .note { color: var(--muted); font-size: 12px; margin-top: 18px; }
     .note a { color: var(--accent); }
+    details.proj { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 12px; }
+    details > summary { list-style: none; cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+    details.proj > summary { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+      font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .caret { display: inline-block; width: 10px; transition: transform .15s; }
+    details[open] > summary .caret { transform: rotate(90deg); }
+    details.region { margin: 10px 0 0 2px; }
+    details.region > summary { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    details.region > summary .count { color: var(--muted); font-weight: 400; }
+    .region-tools { font-size: 12px; margin: 4px 0 2px 18px; }
+    .region-tools a { color: var(--accent); cursor: pointer; margin-right: 12px; }
+    .proj-list label.row { font-size: 12.5px; margin: 4px 0 4px 18px; align-items: flex-start; line-height: 1.3; }
+    .proj-list input { margin-top: 2px; flex: none; }
+    .proj-list .st { display: block; color: var(--muted); font-size: 11px; }
+    .proj-list .nm { flex: 1; min-width: 0; }
+    button.zoom { width: auto; flex: none; padding: 0 4px; background: none; color: var(--accent); font-size: 13px;
+      line-height: 1.3; border-radius: 4px; }
+    button.zoom:hover { background: var(--line); }
+    .rdot { width: 10px; height: 10px; border-radius: 2px; flex: none; display: inline-block; }
     .hint { color: var(--muted); font-size: 12px; margin: 2px 0 0 24px; }
     #mapLegend { background: #fff; color: var(--text); border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.3);
       font-size: 12px; width: 270px; max-height: 60vh; overflow-y: auto; }
@@ -105,6 +125,14 @@
     <h2>Exclude areas</h2>
     <div id="exclusions"></div>
 
+    <details class="proj" id="projSection">
+      <summary><span class="caret">▸</span> EcoAtlas projects</summary>
+      <label class="row" style="margin-top:8px"><input id="projOn" type="checkbox"> Show projects on map</label>
+      <p class="hint" style="margin-left:0">San Mateo County projects from SFEI EcoAtlas (California Habitat Projects).
+        Uncheck any project to hide it. Click a project on the map for its details; ⌖ zooms to it.</p>
+      <div id="projGroups"><p class="hint" style="margin-left:0">Loading projects…</p></div>
+    </details>
+
     <h2>Export</h2>
     <button id="exportBtn" disabled>Download San Mateo GeoJSON (this scenario)</button>
     <div id="status">Loading county boundary…</div>
@@ -114,6 +142,7 @@
       Data: <a href="https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer" target="_blank" rel="noopener">BCDC RSAP Coastal Flood Hazards</a>
       (BCDC, USGS CoSMoS, ART). FEMA National Flood Hazard Layer. Transportation and critical infrastructure: BCDC RSAP Strategic Regional Priorities. County boundary: U.S. Census TIGERweb.
       Layers are clipped on the fly in your browser; the source data is not modified. City limits: U.S. Census TIGERweb.
+      Projects: SFEI EcoAtlas, California Habitat Projects (downloaded Oct 29, 2026).
       Planning-level data, not for project design.
     </p>
   </aside>
@@ -212,6 +241,11 @@ const CONFIG = {
     }
   ],
   lineThinning: 0.6,   // "thin" layers draw at this fraction of BCDC's line width
+  // SFEI EcoAtlas habitat projects in San Mateo County. This file sits next to index.html in the repo.
+  projects: {
+    url: "ecoatlas_san_mateo.geojson",
+    colors: { Bayside: [126, 87, 194], Coastside: [199, 61, 141] }   // violet and magenta
+  },
   basemap: "gray-vector",
   altBasemap: "hybrid"
 };
@@ -222,6 +256,7 @@ require([
   "esri/layers/FeatureLayer",
   "esri/layers/GraphicsLayer",
   "esri/layers/GroupLayer",
+  "esri/layers/GeoJSONLayer",
   "esri/Graphic",
   "esri/geometry/Polygon",
   "esri/geometry/geometryEngine",
@@ -230,7 +265,7 @@ require([
   "esri/symbols/support/symbolUtils",
   "esri/symbols/support/cimSymbolUtils",
   "esri/widgets/ScaleBar"
-], function (Map, MapView, FeatureLayer, GraphicsLayer, GroupLayer, Graphic, Polygon,
+], function (Map, MapView, FeatureLayer, GraphicsLayer, GroupLayer, GeoJSONLayer, Graphic, Polygon,
              geometryEngine, webMercatorUtils, query, symbolUtils, cimSymbolUtils, ScaleBar) {
 
   const $ = (id) => document.getElementById(id);
@@ -373,6 +408,54 @@ require([
   });
   // Erases FEMA zones over open water, using BCDC's "Existing Bay" polygon from the hazard layers
   const femaWaterMask = new GraphicsLayer({ blendMode: "destination-out", listMode: "hide", legendEnabled: false });
+  /* ---------- EcoAtlas projects ---------- */
+  const projSymbol = (rgb) => ({ type: "simple-fill", color: [...rgb, 0.22], outline: { color: [...rgb, 1], width: 1.6 } });
+  const projLayer = new GeoJSONLayer({
+    url: CONFIG.projects.url,
+    title: "EcoAtlas projects",
+    visible: false,
+    outFields: ["*"],
+    objectIdField: "OID",
+    fields: [
+      { name: "OID", type: "oid" },
+      { name: "projectid", type: "integer", alias: "EcoAtlas ID" },
+      ...["Project", "Cost", "Status", "Region", "Project_type", "Site", "Site_status", "Habitat", "Benefits",
+          "Organization", "Contacts", "Group", "EcoAtlas_link"].map((n) => ({ name: n, type: "string" })),
+      { name: "Sites_in_San_Mateo", type: "integer" },
+      { name: "Total_sites", type: "integer" }
+    ],
+    renderer: {
+      type: "unique-value",
+      field: "Region",
+      uniqueValueInfos: Object.entries(CONFIG.projects.colors).map(([k, c]) => ({ value: k, label: k, symbol: projSymbol(c) }))
+    },
+    popupTemplate: {
+      title: "{Project}",
+      content: [
+        {
+          type: "fields",
+          fieldInfos: [
+            { fieldName: "Cost",               label: "Cost" },
+            { fieldName: "Status",             label: "Project status" },
+            { fieldName: "Region",             label: "Region" },
+            { fieldName: "Project_type",       label: "Project type" },
+            { fieldName: "Site",               label: "Site" },
+            { fieldName: "Site_status",        label: "Site status" },
+            { fieldName: "Habitat",            label: "Habitat" },
+            { fieldName: "Benefits",           label: "Benefits" },
+            { fieldName: "Organization",       label: "Entered by" },
+            { fieldName: "Contacts",           label: "Contacts" },
+            { fieldName: "Group",              label: "Project group" },
+            { fieldName: "Sites_in_San_Mateo", label: "Sites in San Mateo" },
+            { fieldName: "Total_sites",        label: "Total sites" },
+            { fieldName: "projectid",          label: "EcoAtlas ID" }
+          ]
+        },
+        { type: "text", text: "<a href='{EcoAtlas_link}' target='_blank' rel='noopener'>Open this project in EcoAtlas ↗</a>" }
+      ]
+    }
+  });
+
   const femaGroup = new GroupLayer({ title: "FEMA flood zones", layers: [fema500, fema100, femaWaterMask] });
   let bayLoading = null;
   function ensureBayMask() {
@@ -486,7 +569,7 @@ require([
   const maskLayer = new GraphicsLayer({ blendMode: "destination-in", listMode: "hide", legendEnabled: false });
   const hazardGroup = new GroupLayer({
     title: "Coastal flood hazards",
-    layers: [...hazardLayers, femaGroup, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
+    layers: [...hazardLayers, femaGroup, projLayer, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
     visible: false                          // shown once the boundary has loaded
   });
   const outlineLayer = new GraphicsLayer({ listMode: "hide" });
@@ -534,13 +617,17 @@ require([
       if ($("femaLandOnly").checked) html += `<div class="lg-item" style="color:var(--muted)">Land only: zones over the Bay hidden.</div>`;
       if (view.scale > CONFIG.fema.minScale) html += `<div class="lg-item" style="color:var(--muted)">Zoom in to see FEMA zones.</div>`;
     }
+    if (projLayer.visible) {
+      html += `<h3>EcoAtlas projects</h3>` + Object.entries(CONFIG.projects.colors).map(([k, c]) =>
+        item(`<span class="sw" style="background:${rgba(c, 0.22)};border:2px solid ${rgba(c, 1)}"></span>`, k)).join("");
+    }
     const infraOn = infraLayers.filter((x) => x.layer.visible);
     CONFIG.infraGroups.forEach((grp) => {
       const on = infraOn.filter((x) => x.group === grp);
       if (!on.length) return;
       html += `<h3>${grp.title}</h3>` + on.map((x) => `<div class="lg-infra" data-key="${x.key}"></div>`).join("");
     });
-    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked && !infraOn.length) html += `<div class="lg-item">No hazard layers switched on.</div>`;
+    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked && !infraOn.length && !projLayer.visible) html += `<div class="lg-item">No hazard layers switched on.</div>`;
     html += `<h3>Boundaries</h3>`;
     if ($("showOutline").checked) html += item(`<span class="sw line"></span>`, "San Mateo County");
     if (excluded.size) html += item(`<span class="sw dash"></span>`, "Clipped-out area");
@@ -685,6 +772,93 @@ require([
   });
 
   view.watch("scale", () => { if ($("fema100").checked || $("fema500").checked) renderLegend(); });
+
+  /* ---------- EcoAtlas project list (grouped Coastside / Bayside) ---------- */
+  const projOnIds = new Set();      // projects currently switched on
+  const projExtents = {};           // projectid -> extent, for zooming
+  const projBoxes = {};             // projectid -> checkbox
+
+  function applyProjFilter() {
+    const ids = [...projOnIds];
+    projLayer.definitionExpression = ids.length ? `projectid IN (${ids.join(",")})` : "1=0";
+  }
+  $("projOn").addEventListener("change", (e) => { projLayer.visible = e.target.checked; renderLegend(); });
+
+  projLayer.load().then(() => projLayer.queryFeatures({
+    where: "1=1",
+    outFields: ["projectid", "Project", "Status", "Region"],
+    returnGeometry: true
+  })).then((fs) => {
+    const byId = {};
+    fs.features.forEach((f) => {
+      const a = f.attributes;
+      if (!byId[a.projectid]) byId[a.projectid] = { id: a.projectid, name: a.Project, status: a.Status, region: a.Region };
+      const ext = f.geometry && f.geometry.extent;
+      if (ext) projExtents[a.projectid] = projExtents[a.projectid] ? projExtents[a.projectid].clone().union(ext) : ext.clone();
+    });
+    const projects = Object.values(byId).sort((x, y) => x.name.localeCompare(y.name));
+    projects.forEach((pr) => projOnIds.add(pr.id));
+    applyProjFilter();
+
+    const wrap = $("projGroups");
+    wrap.innerHTML = "";
+    ["Coastside", "Bayside"].forEach((region) => {
+      const list = projects.filter((pr) => pr.region === region);
+      if (!list.length) return;
+      const c = CONFIG.projects.colors[region] || [120, 120, 120];
+      const det = document.createElement("details");
+      det.className = "region";
+      det.innerHTML = `<summary><span class="caret">▸</span><span class="rdot" style="background:rgba(${c[0]},${c[1]},${c[2]},.9)"></span>` +
+                      `${region} <span class="count">(${list.length})</span></summary>` +
+                      `<div class="region-tools"><a role="button" tabindex="0" data-all="1">Show all</a>` +
+                      `<a role="button" tabindex="0" data-all="0">Hide all</a></div><div class="proj-list"></div>`;
+      const listEl = det.querySelector(".proj-list");
+      list.forEach((pr) => {
+        const lab = document.createElement("label");
+        lab.className = "row";
+        const box = document.createElement("input");
+        box.type = "checkbox"; box.checked = true;
+        const nm = document.createElement("span");
+        nm.className = "nm";
+        nm.textContent = pr.name;
+        const st = document.createElement("span");
+        st.className = "st"; st.textContent = pr.status || "";
+        nm.appendChild(st);
+        const zoom = document.createElement("button");
+        zoom.className = "zoom"; zoom.type = "button"; zoom.textContent = "⌖";
+        zoom.title = "Zoom to this project";
+        zoom.addEventListener("click", (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (!box.checked) { box.checked = true; box.dispatchEvent(new Event("change")); }
+          if (!$("projOn").checked) { $("projOn").checked = true; $("projOn").dispatchEvent(new Event("change")); }
+          const ext = projExtents[pr.id];
+          if (ext) view.goTo(ext.clone().expand(1.6)).catch(() => {});
+        });
+        box.addEventListener("change", () => {
+          box.checked ? projOnIds.add(pr.id) : projOnIds.delete(pr.id);
+          applyProjFilter();
+        });
+        projBoxes[pr.id] = box;
+        lab.append(box, nm, zoom);
+        listEl.appendChild(lab);
+      });
+      det.querySelectorAll(".region-tools a").forEach((link) => {
+        const go = () => {
+          const on = link.dataset.all === "1";
+          list.forEach((pr) => { projBoxes[pr.id].checked = on; on ? projOnIds.add(pr.id) : projOnIds.delete(pr.id); });
+          applyProjFilter();
+        };
+        link.addEventListener("click", go);
+        link.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+      });
+      wrap.appendChild(det);
+    });
+  }).catch((err) => {
+    console.error(err);
+    $("projGroups").innerHTML = `<p class="hint" style="margin-left:0;color:#a33">Couldn't load the project file ` +
+      `(${CONFIG.projects.url}). Check that it's uploaded next to index.html in the repo.</p>`;
+    $("projOn").disabled = true;
+  });
   $("imagery").addEventListener("change", (e) => {
     map.basemap = e.target.checked ? CONFIG.altBasemap : CONFIG.basemap;
   });
