@@ -81,9 +81,9 @@
     <div id="scenarios"></div>
 
     <h2>Hazard layers</h2>
-    <label class="row"><input id="lyr_combined" type="checkbox" checked> Combined hazards (BCDC map)</label>
-    <label class="row"><input id="lyr_tidal" type="checkbox"> Tidal inundation (MHHW)</label>
-    <label class="row"><input id="lyr_surge" type="checkbox"> Storm surge (100-year)</label>
+    <label class="row"><input id="lyr_combined" type="checkbox"> Combined hazards (BCDC map)</label>
+    <label class="row"><input id="lyr_tidal" type="checkbox" checked> Tidal inundation (MHHW)</label>
+    <label class="row"><input id="lyr_surge" type="checkbox" checked> Storm surge (100-year)</label>
     <label class="row"><input id="lyr_gw" type="checkbox"> Groundwater (emergent &amp; shallow)</label>
     <p class="hint">Each layer shows the BCDC areas that include that hazard. Storm surge draws underneath the tidal and groundwater layers, which show on top of it where they overlap.</p>
 
@@ -126,6 +126,7 @@
 ---------------------------------------------------------------- */
 const CONFIG = {
   serviceUrl: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer",
+  defaultScenario: 39,   // layer id of the scenario shown on load (39 = 4.9 ft, 2100 Intermediate-High)
   scenarios: [
     { id: 37, label: "0.8 ft SLR", sub: "2050",                    file: "0p8ft_2050" },
     { id: 38, label: "3.1 ft SLR", sub: "2100 Intermediate",       file: "3p1ft_2100_int" },
@@ -205,7 +206,8 @@ const CONFIG = {
         // ArcGIS Online item; its title, symbols and popup come from the item itself.
         // It must be shared with Everyone (public) for the site to show it.
         { portalUrl: "https://oneshoreline.maps.arcgis.com", itemId: "defe3431d7644a8bb0c676d937f3aaeb", layerId: 0,
-          color: [72, 229, 83] }   // bright green; remove this line to use the item's own symbols
+          color: [72, 229, 83],      // bright green; remove this line to use the item's own symbols
+          startOn: true }            // shown when the page opens
       ]
     }
   ],
@@ -238,7 +240,7 @@ require([
     statusEl.className = isError ? "error" : "";
   }
 
-  let active = CONFIG.scenarios[0];
+  let active = CONFIG.scenarios.find((sc) => sc.id === CONFIG.defaultScenario) || CONFIG.scenarios[0];
   let countyWM = null;           // county polygon in Web Mercator
   let areaWM = null;             // county minus any excluded areas (what is shown/exported)
   const exclusionGeoms = {};     // exclusion id -> polygon in Web Mercator
@@ -407,8 +409,8 @@ require([
     grp.layers.forEach((d, n) => {
       const lyr = d.itemId
         ? new FeatureLayer({ portalItem: { id: d.itemId, portal: { url: d.portalUrl } }, layerId: d.layerId,
-                             visible: false, outFields: ["*"] })
-        : new FeatureLayer({ url: `${grp.url}/${d.id}`, title: d.title, visible: false, outFields: ["*"] });
+                             visible: !!d.startOn, outFields: ["*"] })
+        : new FeatureLayer({ url: `${grp.url}/${d.id}`, title: d.title, visible: !!d.startOn, outFields: ["*"] });
       const x = { key: `${grp.id}_${d.id ?? n}`, group: grp, title: d.title || "Loading…", layer: lyr };
       x.ready = lyr.when(() => {
         if (!d.title) setInfraTitle(x, lyr.title || "OneShoreline layer");
@@ -629,7 +631,7 @@ require([
   CONFIG.scenarios.forEach((sc, i) => {
     const lab = document.createElement("label");
     lab.className = "scenario";
-    lab.innerHTML = `<input type="radio" name="sc" ${i === 0 ? "checked" : ""}>
+    lab.innerHTML = `<input type="radio" name="sc" ${sc === active ? "checked" : ""}>
                      <div>${sc.label}<span>${sc.sub}</span></div>`;
     lab.querySelector("input").addEventListener("change", () => selectScenario(sc));
     scWrap.appendChild(lab);
@@ -666,6 +668,7 @@ require([
       lab.className = "row";
       lab.innerHTML = `<input type="checkbox"><span></span>`;
       const box = lab.querySelector("input");
+      box.checked = x.layer.visible;
       x.labelText = lab.querySelector("span");
       x.labelText.textContent = " " + x.title;
       box.addEventListener("change", () => { x.layer.visible = box.checked; renderLegend(); });
