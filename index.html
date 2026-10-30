@@ -1,649 +1,915 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0A5587">
-<meta name="description" content="Real-time creek, rain and tide information from OneShoreline's flood early warning system in San Mateo County.">
-<link rel="icon" type="image/png" sizes="32x32" href="img/icon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
-<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<title>OneShoreline Flood Early Warning</title>
-<style>
-  :root {
-    --bg: #f0f4f8; --card: #ffffff; --ink: #003B5C; --text: #22303f; --muted: #56657a; --line: #e3e8ee; --brand: #0A5587;
-    --ok: #2e7d32; --amber: #a35f00; --red: #b71c1c; --gray: #66717d; --link: #0A5587;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #0e1319; --card: #18202a; --ink: #e6edf5; --text: #dbe3ec; --muted: #9aa8b8; --line: #2a3542; --link: #6ea8fe;
-      --ok: #66bb6a; --amber: #ffa726; --red: #ef5350; }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.45;
-    padding-bottom: calc(68px + env(safe-area-inset-bottom)); }   /* room for the bottom bar */
-  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--card);
-    border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
-  nav a { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); text-decoration: none;
-    padding: 8px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  nav a .i { font-size: 21px; line-height: 1.1; }
-  @media (max-width: 420px) { nav a, nav button { font-size: 11px; } nav a .i, nav button .i { font-size: 19px; } }   /* six or seven tabs on a phone */
-  nav a.on { color: var(--ink); font-weight: bold; }
-  .wrap { max-width: 860px; margin: 0 auto; }
-  a { color: var(--link); }
-
-  /* Compact header: one row */
-  header { background: var(--brand); color: #fff; padding: calc(9px + env(safe-area-inset-top)) 16px 9px; }
-  header .wrap { display: flex; align-items: center; gap: 11px; }
-  header .mark { width: 36px; height: 36px; flex: none; }
-  header h1 { font-size: 19px; margin: 0; line-height: 1.15; }
-  header .org { font-size: 12.5px; opacity: .85; line-height: 1.25; }
-
-
-  /* The one alert at the top and the tide cards: hero.js (shared with the Creeks and Tides pages and the kiosk) */
-  .tides2 .tcard2 { min-height: 100%; }
-
-  main { padding: 14px 16px 32px; }
-  h2.sec { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 22px 0 8px;
-    display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-  main > h2.sec:first-child { margin-top: 4px; }
-  h2.sec a { font-size: 12.5px; text-transform: none; letter-spacing: 0; font-weight: 600; white-space: nowrap; }
-  /* Status boxes: the status color goes all the way around the box */
-  .box { background: var(--card); border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.07);
-    border: 3px solid var(--line); }
-  .box.ok { border-color: var(--ok); }
-  .box.amber { border-color: #e07b00; background: color-mix(in srgb, #e07b00 7%, var(--card)); }
-  /* information, not a hazard: a tide higher than an average high tide (MHHW is a tidal reference, not a flood level) */
-  .box.info { border-color: #1e88e5; background: color-mix(in srgb, #1e88e5 7%, var(--card)); }
-  @media (prefers-color-scheme: dark) { .box.info { border-color: #4ea3f0; } }
-  .box.red { border-color: #c62828; background: color-mix(in srgb, #c62828 7%, var(--card)); }
-  .box.gray { border-color: var(--gray); }
-
-  /* NWS alerts, shown in full */
-  .al h3 { margin: 0; font-size: 18px; color: var(--ink); }
-  .al.red h3 { color: var(--red); } .al.amber h3 { color: #a35f00; }
-  @media (prefers-color-scheme: dark) { .al.amber h3 { color: var(--amber); } }
-  .al .when { font-size: 13.5px; color: var(--muted); margin: 1px 0 8px; }
-  .al dl { display: grid; grid-template-columns: 5.6em 1fr; gap: 4px 10px; margin: 0; font-size: 15px; }
-  .al dt { font-weight: 700; color: var(--ink); } .al dd { margin: 0; }
-  .al p { margin: 6px 0 0; font-size: 15px; }
-  .al details { margin-top: 6px; font-size: 14px; } .al summary { cursor: pointer; color: var(--muted); }
-  .al { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; } .al:last-child { border-bottom: 0; }
-
-  /* Creek status cards */
-  .creeks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  @media (min-width: 760px) { .creeks { grid-template-columns: repeat(4, 1fr); } }
-  a.ck { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: inherit; padding: 10px 12px; }
-  a.ck:hover, a.ck:focus-visible { box-shadow: 0 0 0 2px var(--brand), 0 1px 4px rgba(0,0,0,.07); }
-  .ck .nm { font-size: 17px; font-weight: 700; color: var(--ink); line-height: 1.2; }
-  .ck .badge { align-self: flex-start; font-size: 12px; font-weight: 700; border-radius: 5px; padding: 2px 8px; color: #fff; background: var(--gray); }
-  .ck .g { font-size: 13.5px; line-height: 1.3; }
-  .ck .g b { font-size: 16px; color: var(--ink); }
-  .ck .g .q { color: var(--muted); }
-  .ck .rain { font-size: 13px; color: var(--muted); }
-  .ck .rain b { color: var(--text); }
-  .ck .go { margin-top: auto; padding-top: 2px; font-size: 13px; font-weight: 600; color: var(--link); }
-  .note { font-size: 13px; color: var(--muted); margin: 8px 2px 0; }
-
-  .ck .g .l, .ck .rain .l { display: block; font-size: 12px; color: var(--muted); }
-  .ck .rain .met { color: #c62828; font-weight: 700; }
-  .ck .rain > span:not(.l) { white-space: nowrap; }   /* keep "15 min 0.08" together when the line wraps */
-  @media (prefers-color-scheme: dark) { .ck .rain .met { color: #ef5350; } }
-  /* Bay tide card (same rule as the Tides page and the kiosk) */
-  a.tide { display: block; text-decoration: none; color: inherit; }
-  a.tide:hover, a.tide:focus-visible { box-shadow: 0 0 0 2px var(--brand), 0 1px 4px rgba(0,0,0,.07); }
-  .tide .th { display: block; font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--ink); }
-  .tide .th span { font-weight: normal; font-size: 14px; color: var(--text); }
-  .tide .tn { display: block; font-size: 14px; color: var(--muted); margin-top: 4px; }
-  .tide .tn { color: var(--text); font-size: 15px; }
-  .tide .ts { display: block; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
-  /* Bayside and Coastside: one box each, stacked on phones, side by side on wider screens; short text, details one tap away */
-  .tides2 { display: grid; gap: 8px; } @media (min-width: 640px) { .tides2 { grid-template-columns: 1fr 1fr; } }
-  .tides2 .box { padding: 9px 12px; position: relative; padding-right: 28px; border: 1px solid var(--line); }
-  .tides2 .box.sv-card { border-left-width: 6px; }
-  .tide .lv { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; border-radius: 6px; padding: 1px 8px 1px 6px; margin: 3px 0 1px; }
-  .tide .lv .sv-ic { width: 15px; height: 15px; }
-  .tide .t2 { display: block; font-size: 13.5px; color: var(--muted); margin-top: 3px; }
-  .tides2 .th { font-size: 16px; }
-  .tide .sd { display: block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
-  .tides2 .tn { font-size: 14px; margin-top: 2px; }
-  .tides2 .go2 { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 22px; color: var(--muted); }
-  .tide .go { display: block; margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--link); }
-
-  /* Rapidly rising */
-  .rising { display: grid; gap: 10px; margin-top: 10px; }
-  .rs { display: flex; gap: 12px; align-items: flex-start; text-decoration: none; color: inherit; }
-  .rs .ar { font-size: 26px; line-height: 1; color: #e07b00; font-weight: 700; }
-  .rs.red .ar { color: #c62828; }
-  .rs h3 { margin: 0; font-size: 16.5px; color: var(--ink); }
-  .rs p { margin: 2px 0 0; font-size: 14.5px; }
-  .calm { font-size: 13.5px; color: var(--muted); margin: 8px 2px 0; }
-
-  /* Page links */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-  a.card { display: flex; flex-direction: column; background: var(--card); border-radius: 12px; padding: 14px 16px;
-    text-decoration: none; color: inherit; box-shadow: 0 1px 4px rgba(0,0,0,.07); border: 1px solid transparent; }
-  a.card:hover, a.card:focus-visible { border-color: var(--brand); }
-  .card .ic { font-size: 24px; line-height: 1; }
-  .card h3 { font-size: 17px; margin: 6px 0 3px; color: var(--ink); }
-  .card p { margin: 0; font-size: 14.5px; color: var(--muted); }
-  .card .lnk { margin-top: auto; padding-top: 8px; font-size: 14px; font-weight: 600; color: var(--link); }
-
-  /* SMC Alert */
-  .smc { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-  .smc p { margin: 0; flex: 1; min-width: 240px; font-size: 15px; }
-  .smc .not { display: block; margin-top: 6px; font-size: 14px; color: var(--muted); }
-  .btn { display: inline-block; background: var(--brand); color: #fff; text-decoration: none; font-weight: 600;
-    padding: 10px 16px; border-radius: 9px; font-size: 15px; white-space: nowrap; }
-
-  /* System status */
-  .sys { display: grid; gap: 0; padding: 4px 14px; }
-  .sys .row { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
-  .sys .row:first-child { border-top: 0; }
-  .sys .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--gray); transform: translateY(1px); }
-  .sys .dot.ok { background: var(--ok); } .sys .dot.amber { background: #e07b00; } .sys .dot.red { background: #c62828; }
-  .sysfold { margin: 18px 0 0; } .sysfold > summary { cursor: pointer; font-weight: 600; color: var(--ink); min-height: 44px; display: flex; align-items: center; }
-  .sys .dot.dq { background: transparent; border: 2px dashed var(--gray); box-sizing: border-box; }   /* data problem (late, not reporting), not a hazard */
-  .sys .k { font-weight: 700; color: var(--ink); white-space: nowrap; }
-  .sys .v { flex: 1; min-width: 0; }
-  .sys a { white-space: nowrap; }
-  @media (max-width: 480px) { .sys .row { flex-wrap: wrap; } .sys .v { flex-basis: 100%; padding-left: 20px; margin-top: -4px; } }
-  .ck .met { font-size: 12.5px; font-weight: 700; color: #c62828; }
-  @media (prefers-color-scheme: dark) { .ck .met { color: #ef5350; } }
-
-  .contact { font-size: 14.5px; } .contact a { color: inherit; }
-  .fine { font-size: 13px; color: var(--muted); }
-  .owner { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; line-height: 1.45; }
-  .owner img { display: block; margin: 0 0 6px; height: 37px; width: auto; }
-  .owner a { color: inherit; }
-  footer { border-top: 1px solid var(--line); margin-top: 26px; padding-top: 14px; }
-  /* "In an emergency, call 911." in the logo bar, top right, on every page (staff, 2026-10-26): plain text, not a link */
-  .h911 { margin-left: auto; flex: none; white-space: nowrap; text-align: right; font-size: 14px; font-weight: 700; line-height: 1.25; color: #fff; }
-  @media (max-width: 640px) { .h911 { font-size: 12px; max-width: 9.4em; white-space: normal; } }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>San Mateo Coastal Flood Hazards</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.33/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.33/"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --panel: #f6f7f8;
+      --text: #1d2327;
+      --muted: #5f6b73;
+      --line: #d9dee2;
+      --accent: #244161;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+      font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    #app { display: flex; height: 100%; }
+    #panel { width: 340px; flex: none; overflow-y: auto; background: var(--panel);
+      border-right: 1px solid var(--line); padding: 16px; }
+    #viewDiv { flex: 1; min-width: 0; }
+    h1 { font-size: 18px; margin: 0 0 2px; }
+    .sub { color: var(--muted); margin: 0 0 14px; }
+    h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+      margin: 18px 0 8px; }
+    .scenario { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; margin-bottom: 6px;
+      border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
+    .scenario:has(input:checked) { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+    .scenario span { display: block; color: var(--muted); font-size: 12px; }
+    label.row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    input[type=range] { width: 100%; }
+    button { width: 100%; padding: 9px 12px; border: 0; border-radius: 6px; background: var(--accent);
+      color: #fff; font: inherit; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: default; }
+    #status { color: var(--muted); font-size: 12px; margin-top: 8px; min-height: 1em; }
+    #status.error { color: #a33; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    td, th { padding: 4px 2px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    .note { color: var(--muted); font-size: 12px; margin-top: 18px; }
+    .note a { color: var(--accent); }
+    .hint { color: var(--muted); font-size: 12px; margin: 2px 0 0 24px; }
+    #mapLegend { background: #fff; color: var(--text); border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.3);
+      font-size: 12px; width: 270px; max-height: 60vh; overflow-y: auto; }
+    #mapLegend .lg-head { display: flex; justify-content: space-between; align-items: center; width: 100%;
+      background: none; color: var(--text); padding: 8px 10px; font-weight: 600; font-size: 13px; border-radius: 6px; }
+    #mapLegend .lg-body { padding: 0 10px 8px; }
+    #mapLegend.collapsed .lg-body { display: none; }
+    #mapLegend h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+      margin: 8px 0 4px; font-weight: 600; }
+    .lg-item { display: flex; align-items: center; gap: 8px; margin: 3px 0; line-height: 1.25; }
+    .sw { flex: none; width: 18px; height: 14px; border: 1px solid rgba(0,0,0,.25); border-radius: 2px; }
+    .sw.fema100 { background: rgba(196,30,58,.45); }
+    .sw.fema500 { background: rgba(240,128,128,.35); }
+    .grp-head { display: flex; justify-content: space-between; align-items: baseline; margin: 10px 0 2px; font-weight: 600; font-size: 13px; }
+    .grp-head a { font-weight: 400; font-size: 12px; color: var(--accent); cursor: pointer; }
+    .infra label.row { font-size: 13px; margin: 4px 0; }
+    .lg-prev { flex: none; width: 22px; height: 18px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .lg-prev > * { max-width: 22px; max-height: 18px; }
+    .lg-prev svg, .lg-prev img, .lg-prev canvas { max-width: 22px !important; max-height: 18px !important; }
+    .lg-sub { font-weight: 600; margin: 6px 0 2px; }
+    .sw.line { height: 0; border: 0; border-top: 2px solid #244161; }
+    .sw.dash { height: 0; border: 0; border-top: 2px dashed #5a5a5a; }
+    @media (max-width: 760px) { #mapLegend { width: 210px; max-height: 35vh; } }
+    @media (max-width: 760px) {
+      #app { flex-direction: column-reverse; }
+      #panel { width: 100%; max-height: 45vh; border-right: 0; border-top: 1px solid var(--line); }
+    }
+  </style>
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <img class="mark" src="img/oneshoreline-mark-white.png" alt="OneShoreline" width="36" height="36">
-    <div><h1>Flood Early Warning</h1>
-      <div class="org">OneShoreline · San Mateo County Flood and Sea Level Rise Resiliency District</div></div>
-    <div class="h911" data-text="e911">In an emergency, call 911.</div>
-  </div>
-</header>
+<div id="app">
+  <aside id="panel">
+    <h1>San Mateo County</h1>
+    <p class="sub">Coastal flood hazards (BCDC RSAP, 2024 SLR guidance)</p>
 
-<main class="wrap">
-  <!-- The one alert at the top: National Weather Service products, the Bay tide and the creeks (renderHero) -->
-  <section id="hero" class="hero sv-hero sv-normal"><div class="hh"><span class="hic"></span><div><h2 class="hhd">Checking National Weather Service alerts…</h2><p class="hsub src">San Mateo County</p></div></div><div class="hmore"></div></section>
-  <!-- Tides and creeks: put in order by renderOrder (an active condition first, the more severe first) -->
-  <div id="secTides"><h2 class="sec"><span id="hTide">Tides</span> <a href="Tides.html">Tide details ›</a></h2>
-  <div class="tides2">
-    <a class="tcard2" id="tide" href="Tides.html"><span class="sd">Bayside</span><span class="th">Loading…</span></a>
-    <a class="tcard2" id="tideCoast" href="Tides.html?side=coast"><span class="sd">Coastside</span><span class="th">Loading…</span></a>
-  </div></div>
-  <div id="secCreeks"><h2 class="sec"><span id="hCreeks">Creeks</span> <a href="Creeks.html" id="creeksLink">All creek details ›</a></h2>
-  <div id="csPreview"></div>
-  <div class="creeks" id="creeks">
-    <div class="box ck gray"><span class="nm">Loading…</span></div>
-  </div>
-  <div class="rising" id="rising"></div>
-  <div class="calm" id="calm"></div></div>
+    <h2>Sea level rise scenario</h2>
+    <div id="scenarios"></div>
 
-  <div id="secMore"><h2 class="sec">More</h2>
-  <div class="grid">
-    <a class="card" href="SiteMap.html">
-      <span class="ic">🗺️</span><h3>Sensor map</h3>
-      <p>Every public rain, creek and tide gauge in the network. Tap a site for its latest readings.</p>
-      <span class="lnk">Open map ›</span></a>
-  </div></div>
+    <h2>Hazard layers</h2>
+    <label class="row"><input id="lyr_combined" type="checkbox"> Combined hazards (BCDC map)</label>
+    <label class="row"><input id="lyr_tidal" type="checkbox" checked> Tidal inundation (MHHW)</label>
+    <label class="row"><input id="lyr_surge" type="checkbox" checked> Storm surge (100-year)</label>
+    <label class="row"><input id="lyr_gw" type="checkbox"> Groundwater (emergent &amp; shallow)</label>
+    <p class="hint">Each layer shows the BCDC areas that include that hazard. Storm surge draws underneath the tidal and groundwater layers, which show on top of it where they overlap.</p>
 
-  <h2 class="sec" id="secAlerts">Get alerts</h2>
-  <div class="box smc">
-    <p><span data-text="smc_alert_intro"></span>
-      <span class="not" data-text="smc_alert_note" data-lead></span></p>
-    <a class="btn" href="https://www.smcgov.org/dem/smc-alert" data-href="url_smc_alert" target="_blank" rel="noopener">Sign up for SMC Alert</a>
-  </div>
+    <h2>FEMA flood zones (effective FIRM)</h2>
+    <label class="row"><input id="fema100" type="checkbox"> 100-year floodplain (1% annual chance)</label>
+    <label class="row"><input id="fema500" type="checkbox"> 500-year floodplain (0.2% annual chance)</label>
+    <label class="row"><input id="femaLandOnly" type="checkbox" checked> Land only (hide FEMA zones over the Bay)</label>
+    <p class="hint">Current FEMA maps, not sea level rise scenarios. FEMA's server can be slow, so give these a few seconds to draw.</p>
 
-  <div id="secSys"><h2 class="sec">System status</h2>
-  <div class="box sys" id="sys">
-    <div class="row"><span class="dot" id="dCreek"></span><span class="k">Creek data</span><span class="v" id="vCreek">checking…</span></div>
-    <div class="row"><span class="dot" id="dGauges"></span><span class="k">Creek gauges</span><span class="v" id="vGauges">checking…</span></div>
-    <div class="row"><span class="dot" id="dSites"></span><span class="k">Monitoring network</span><span class="v"><span id="vSites">checking…</span> · <a href="SiteMap.html">map ›</a></span></div>
-    <div class="row" id="rLook" hidden><span class="dot dq"></span><span class="k">Settings files</span><span class="v" id="vLook"></span></div>
-  </div>
-  <div class="grid" style="margin-top:12px">
-    <a class="card" href="https://oneshorelineearlywarning.onerain.com/" target="_blank" rel="noopener">
-      <span class="ic">📈</span><h3>Detailed data</h3>
-      <p>Full history, graphs and tide outlooks on the OneShoreline Early Warning System (OneRain).</p>
-      <span class="lnk">Open OneRain ↗</span></a>
-  </div></div>
+    <h2>Regional priorities (BCDC RSAP)</h2>
+    <div id="infraControls" class="infra"></div>
 
-  <h2 class="sec">Contact</h2>
-  <div class="contact">
-    <b data-text="contact_org"></b> · <span data-text="contact_address_1"></span>, <span data-text="contact_address_2"></span><br>
-    <a href="tel:+16508448310" data-tel data-text="contact_phone"></a> · <a href="mailto:info@oneshoreline.org" data-mailto data-text="contact_email"></a> ·
-    <a href="https://www.oneshoreline.org" data-href="url_website" data-text="contact_website" target="_blank" rel="noopener"></a>
-  </div>
+    <h2>Display</h2>
+    <label class="row">Opacity <input id="opacity" type="range" min="0.2" max="1" step="0.05" value="0.85"></label>
+    <label class="row"><input id="showBay" type="checkbox" checked> Show “Existing Bay”</label>
+    <label class="row"><input id="showOutline" type="checkbox" checked> Show county outline</label>
+    <label class="row"><input id="imagery" type="checkbox"> Satellite imagery (hybrid basemap)</label>
 
-  <footer>
-    <div class="owner">
-      <picture><source srcset="img/oneshoreline-logo-white.png" media="(prefers-color-scheme: dark)"><img src="img/oneshoreline-logo.png" alt="OneShoreline" width="160" height="37"></picture>
-      <div>Operated by OneShoreline, the San Mateo County Flood and Sea Level Rise Resiliency District ·
-        <a href="https://www.oneshoreline.org" target="_blank" rel="noopener">oneshoreline.org</a></div>
-    </div>
-    <p class="fine" data-text="e911_note">This site shows conditions; no one is watching it to send help.</p>
-    <p class="fine"><b>Disclaimer:</b> <span data-text="disclaimer"></span></p>
-    <p class="fine">Data: OneShoreline Early Warning System (OneRain), National Weather Service, NOAA Tides &amp; Currents.
-      <a href="ShorelineKiosk.html" style="color:inherit">Office display</a></p>
-  </footer>
-</main>
+    <h2>Exclude areas</h2>
+    <div id="exclusions"></div>
 
-<!-- Bottom bar, same as the Creeks, Tides and Map pages -->
-<nav aria-label="Pages">
-  <a class="on" href="index.html" aria-current="page"><span class="i" aria-hidden="true">🏠</span>Home</a>
-  <a href="Creeks.html"><span class="i" aria-hidden="true">💧</span>Creeks</a>
-  <a href="Tides.html"><span class="i" aria-hidden="true"><svg class="wv" viewBox="0 0 24 24" width="1.15em" height="1.1em" style="display:block" aria-hidden="true"><path d="M1.5 12q2.6-5 5.25 0t5.25 0 5.25 0 5.25 0" fill="none" stroke="#1e88e5" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Tides</a>
-  <a href="SiteMap.html"><span class="i" aria-hidden="true">🗺️</span>Map</a>
-  <a href="Creeks.html#about"><span class="i" aria-hidden="true">ℹ️</span>About</a>
-</nav>
+    <h2>Export</h2>
+    <button id="exportBtn" disabled>Download San Mateo GeoJSON (this scenario)</button>
+    <div id="status">Loading county boundary…</div>
+    <div id="summary"></div>
 
-<script src="lookups.js?v=20261029a"></script>
-<script src="severity.js?v=20261029a"></script>
-<script src="creek_status.js?v=20261029a"></script>
-<script src="hero.js?v=20261029a"></script>
+    <p class="note">
+      Data: <a href="https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer" target="_blank" rel="noopener">BCDC RSAP Coastal Flood Hazards</a>
+      (BCDC, USGS CoSMoS, ART). FEMA National Flood Hazard Layer. Transportation and critical infrastructure: BCDC RSAP Strategic Regional Priorities. County boundary: U.S. Census TIGERweb.
+      Layers are clipped on the fly in your browser; the source data is not modified. City limits: U.S. Census TIGERweb.
+      Planning-level data, not for project design.
+    </p>
+  </aside>
+  <div id="viewDiv"></div>
+</div>
+
 <script>
-// The home page with the creek status layer (public since Oct 16: STATUS_PUBLIC in settings.csv; ?preview=1 = staff view).
-// Redesign (staff, 2026-10-26): one alert at the top (National Weather Service, the Bay tide and the creeks together),
-// then tides and creeks in order of what is happening, then sign-up; System status and the OneRain card fold away at the
-// bottom. One severity scale and its colors for everything: severity.js. (No red "High water" bar on this page: the
-// alert at the top says it, with the same time window as the Bayside card.)
-var SV = window.SEVERITY; SV.inject();
-var HOME_PREVIEW = !!(window.CREEK_STATUS && window.CREEK_STATUS.preview);
-var PV_Q = window.CREEK_STATUS && window.CREEK_STATUS.staff ? "?preview=1" : "";   // keep the staff view on the pages it links to
-if (HOME_PREVIEW) (function () {
-  // the National Weather Service bar sits above the page (like the Creeks page); then a creek's "call 911" banner, then the creeks
-  document.getElementById("hCreeks").textContent = "Creeks right now";
-  document.getElementById("hTide").textContent = "Tides right now";
-  document.getElementById("secMore").hidden = true;
-  var sys = document.getElementById("secSys"), d = document.createElement("details");
-  d.className = "sysfold"; d.innerHTML = "<summary>System status and data sources</summary>";
-  sys.parentNode.insertBefore(d, sys); d.appendChild(sys);
-  sys.querySelector("h2").hidden = true;
-})();
-// (The alert list under the bar is a live region; renderAlerts rewrites it only when its content changes, so screen
-// readers aren't re-read the same alerts every few minutes. Creek cards and the tide box update quietly.)
-/* ===================== CONFIG ===================== */
-// Numbers, tide levels and wording that staff check live in the lookups/ folder (settings.csv, tide_stations.csv,
-// display_text.csv; see lookups/README.md). They are read by lookups.js into the variables below.
-var DATA = "https://raw.githubusercontent.com/OneShorelineSMC/oneshorelinefews/data/";
-var COUNTY_SAME = "006081";
-var LK = window.LOOKUPS;
-var CREEK_DATA_LATE_MIN, GAUGE_QUIET_HOURS, GAUGE_QUIET_HOURS_INTERVAL, SITE_QUIET_HOURS, MODEL_MIN_AHEAD_HOURS, OFFSET_NOTE_FT;
-// "Rapidly rising" (riseCheck below; same rule as the data job's rise_check in scripts/creek_signals.py, basis in
-// lookups/RISING_FAST_BASIS.md): a gauge counts when its level rose at least its threshold (rise_ft in
-// creek_gauges.csv, else RISE_FT; 'off' = not used) in RISE_MINUTES, confirmed by the reading before it, and the
-// creek data is current. Tidal gauges (tidal = yes; they rise with every high tide) count only if the creek's rain
-// gauges had at least RISE_TIDAL_RAIN_IN in the last RISE_TIDAL_RAIN_HOURS. RISE_ETA_HOURS: say when the next
-// flood level would be reached, if within this many hours.
-var RISE_FT, RISE_MINUTES, RISE_FRESH_MIN, RISE_TIDAL_RAIN_IN, RISE_TIDAL_RAIN_HOURS, RISE_ETA_HOURS,
-  RISE_REF_LATE_MIN, RISE_CONFIRM_MIN, RISE_CONFIRM_FRACTION, RISE_HOLD_MIN;
-function applyLookups() {
-  CREEK_DATA_LATE_MIN = LK.num("CREEK_DATA_LATE_MIN"); GAUGE_QUIET_HOURS = LK.num("GAUGE_QUIET_HOURS");
-  GAUGE_QUIET_HOURS_INTERVAL = LK.num("GAUGE_QUIET_HOURS_INTERVAL"); SITE_QUIET_HOURS = LK.num("SITE_QUIET_HOURS");
-  MODEL_MIN_AHEAD_HOURS = LK.num("MODEL_MIN_AHEAD_HOURS"); OFFSET_NOTE_FT = LK.num("OFFSET_NOTE_FT");
-  RISE_FT = LK.num("RISE_FT"); RISE_MINUTES = LK.num("RISE_MINUTES"); RISE_FRESH_MIN = LK.num("RISE_FRESH_MIN");
-  RISE_TIDAL_RAIN_IN = LK.num("RISE_TIDAL_RAIN_IN"); RISE_TIDAL_RAIN_HOURS = LK.num("RISE_TIDAL_RAIN_HOURS"); RISE_ETA_HOURS = LK.num("RISE_ETA_HOURS");
-  RISE_REF_LATE_MIN = LK.num("RISE_REF_LATE_MIN"); RISE_CONFIRM_MIN = LK.num("RISE_CONFIRM_MIN"); RISE_CONFIRM_FRACTION = LK.num("RISE_CONFIRM_FRACTION"); RISE_HOLD_MIN = LK.num("RISE_HOLD_MIN");
-}
-applyLookups();
-/* ================================================== */
-
-function parseLocal(s) { var a = String(s).split(/[- :]/).map(Number); return Date.UTC(a[0], a[1] - 1, a[2], a[3], a[4] || 0); }
-function nowLocal() {
-  var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hourCycle: "h23", year: "numeric",
-    month: "numeric", day: "numeric", hour: "numeric", minute: "numeric" }).formatToParts(new Date())
-    .forEach(function (x) { p[x.type] = +x.value; });
-  return Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute);
-}
-function fmt(ms, o) { return new Date(ms).toLocaleString("en-US", Object.assign({ timeZone: "UTC" }, o)); }
-function fTime(ms) { return fmt(ms, { hour: "numeric", minute: "2-digit" }); }
-function agoText(ms) { var m = Math.round(ms / 60000); return m < 60 ? m + " min ago" : m < 2880 ? Math.round(m / 60) + " hr ago" : Math.round(m / 1440) + " days ago"; }
-// "PDT" in summer, "PST" in winter: the Pacific time zone the page shows every time in
-function tzAbbr() {
-  var z = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", timeZoneName: "short" }).formatToParts(new Date())
-    .filter(function (p) { return p.type === "timeZoneName"; })[0];
-  return z ? z.value : "Pacific";
-}
-function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-function hex(c, fb) { return /^#[0-9a-fA-F]{3,8}$/.test(String(c)) ? c : fb; }   // colors only from the data job's fixed table
-function $(id) { return document.getElementById(id); }
-function getJSON(url, accept) {
-  return fetch(url, { cache: "no-store", headers: accept ? { Accept: accept } : {} })
-    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
-}
-function untilText(iso) {
-  return iso ? "until " + new Date(iso).toLocaleString("en-US", { timeZone: "America/Los_Angeles", weekday: "short", hour: "numeric", minute: "2-digit" }) : "until further notice";
-}
-function unwrap(t) { return String(t || "").replace(/-\s*\n\s*(?=[a-z])/g, "-").replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").trim(); }
-function labelCase(s) { return s.toLowerCase().replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); }
-
-/* ---------- National Weather Service and the one alert at the top: hero.js ---------- */
-var NWS = { list: null, failed: false };
-function nws() {
-  HERO.loadNWS(function (list, failed) {
-    if (list) { NWS.list = list; NWS.failed = false; if (C.data) renderCreeks(); renderTide(); renderHero(); }
-    else if (NWS.list == null) { NWS.failed = true; renderHero(); }
-  });
-}
-var TIDE_STATE = { bay: null, coast: null };
-var CR = null;   // the creeks' line for the card (hero.js creeks)
-function renderHero() {
-  HERO.render($("hero"), { nws: NWS.list, nwsFailed: NWS.failed, bay: TIDE_STATE.bay, creeks: CR });
-  renderOrder();
-}
-// Tides and creeks in order: an active condition first, the more severe first (severity.js order; tested)
-function renderOrder() {
-  var tl = SV.top([TIDE_STATE.bay ? TIDE_STATE.bay.level : "normal", TIDE_STATE.coast ? TIDE_STATE.coast.level : "normal"]);
-  var ids = SV.order([{ id: "tides", level: tl }, { id: "creeks", level: CR && CR.level || "normal" }]);
-  var anchor = $("secAlerts"), box = { tides: $("secTides"), creeks: $("secCreeks") };
-  ids.forEach(function (id) { anchor.parentNode.insertBefore(box[id], anchor); });
-}
-
-/* ---------- Creeks: the same status as the creek page's tiles ---------- */
-var C = { data: null, tides: {} };
-function pts(key) {
-  var s = C.data.sensors[key];
-  return s && s.points ? s.points.map(function (p) { return { t: parseLocal(p[0]), v: p[1] }; }) : [];
-}
-function rainSum(p, from, to) { var s = 0; p.forEach(function (x) { if (x.t > from && x.t <= to) s += x.v; }); return s; }
-function stageLevel(g, v) { var l = null; (g.thresholds || []).forEach(function (t) { if (v >= t.value) l = t; }); return l; }
-function valueAt(p, t) { var v = null; p.forEach(function (x) { if (x.t <= t) v = x; }); return v; }
-var HOLD_TOLERANCE_FT = 0.05;   // "hasn't dropped" allows for gauge noise of about one reading step
-// A sensor's readings for the rate of rise, on UTC (Pacific clock times repeat for an hour when daylight saving
-// ends): [{t: UTC ms, v, lt: Pacific ms as from parseLocal}], sorted. Every point carries its UTC time as the 3rd
-// element; one without (the sensor's "latest") takes the offset of the point before it. No UTC at all: Pacific
-// times as they are. Same as utc_series in scripts/creek_signals.py.
-function utcSeries(sensor) {
-  var rows = (sensor && sensor.points || []).map(function (x) {
-    var u = typeof x[2] === "string" && /Z$/.test(x[2]) ? Date.parse(x[2]) : null;
-    return { u: isNaN(u) ? null : u, lt: parseLocal(x[0]), v: x[1] };
-  });
-  var lat = sensor && sensor.latest;
-  if (lat && lat[0] && lat[1] != null) {
-    var lu = typeof lat[2] === "string" && /Z$/.test(lat[2]) ? Date.parse(lat[2]) : null;   // 'latest' has its UTC time since Oct 17, 2026
-    if (lu != null && isNaN(lu)) lu = null;
-    var known = rows.filter(function (r) { return r.u != null; }).map(function (r) { return r.u; });
-    var newer = lu != null && known.length ? lu > Math.max.apply(null, known)   // compare on UTC: right in the repeated hour in November
-      : !rows.length || parseLocal(lat[0]) > rows[rows.length - 1].lt;
-    if (newer) rows.push({ u: lu, lt: parseLocal(lat[0]), v: lat[1] });
-  }
-  var first = rows.filter(function (r) { return r.u != null; })[0];
-  if (!first) return { p: rows.map(function (r) { return { t: r.lt, v: r.v, lt: r.lt }; }).sort(function (a, b) { return a.t - b.t; }), utc: false };
-  var off = first.u - first.lt;
-  return { p: rows.map(function (r) { if (r.u != null) off = r.u - r.lt; return { t: r.u != null ? r.u : r.lt + off, v: r.v, lt: r.lt }; })
-    .sort(function (a, b) { return a.t - b.t; }), utc: true };
-}
-// Rapidly rising at one stage gauge (p: readings sorted by time, {t, v}; now on the same clock). Same rule as
-// rise_check in scripts/creek_signals.py; see lookups/RISING_FAST_BASIS.md. Met when the level is at least the
-// threshold above the reading in force RISE_MINUTES earlier, if that reading isn't too old (scheduled gauges:
-// RISE_REF_LATE_MIN; on-change gauges: GAUGE_QUIET_HOURS); if the reading before is within RISE_CONFIRM_MIN it must
-// have risen RISE_CONFIRM_FRACTION of the threshold too (an on-change gauge quiet for over RISE_MINUTES needs its next report to confirm a jump); stays on until RISE_HOLD_MIN after the reading that met it (a scheduled gauge's newest reading
-// counts until the next one) unless the level drops back. Returns {rise, i, held, th} or null.
-function riseCheck(p, g, now) {
-  if (g.rise_off || !p.length || now - p[p.length - 1].t > RISE_FRESH_MIN * 60000) return null;
-  var th = g.rise_ft || RISE_FT, onChange = g.reports !== "interval", win = RISE_MINUTES * 60000;
-  var late = onChange ? GAUGE_QUIET_HOURS * 3600000 : RISE_REF_LATE_MIN * 60000;
-  function riseAt(i) {
-    var t0 = p[i].t - win, j = -1;
-    for (var k = i; k >= 0; k--) { if (p[k].t <= t0) { j = k; break; } }
-    if (j < 0 || t0 - p[j].t > late) return null;
-    return p[i].v - p[j].v;
-  }
-  function meets(i) {
-    var r = riseAt(i);
-    if (r == null || r < th - 1e-9) return null;
-    if (!RISE_CONFIRM_MIN) return r;   // 0 = confirmation off
-    var near = i > 0 && p[i].t - p[i - 1].t <= RISE_CONFIRM_MIN * 60000;
-    if (onChange && (i === 0 || p[i].t - p[i - 1].t > win)) return null;   // quiet for over RISE_MINUTES, then a jump: wait for the next report
-    if (near) {
-      var r0 = riseAt(i - 1);
-      if (r0 == null || r0 < RISE_CONFIRM_FRACTION * th - 1e-9) return null;   // the reading before wasn't rising too
+/* ---------------------------------------------------------------
+   CONFIG — the only part you should need to edit
+---------------------------------------------------------------- */
+const CONFIG = {
+  serviceUrl: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer",
+  defaultScenario: 39,   // layer id of the scenario shown on load (39 = 4.9 ft, 2100 Intermediate-High)
+  scenarios: [
+    { id: 37, label: "0.8 ft SLR", sub: "2050",                    file: "0p8ft_2050" },
+    { id: 38, label: "3.1 ft SLR", sub: "2100 Intermediate",       file: "3p1ft_2100_int" },
+    { id: 39, label: "4.9 ft SLR", sub: "2100 Intermediate-High",  file: "4p9ft_2100_inthigh" },
+    { id: 40, label: "6.6 ft SLR", sub: "2100 High",               file: "6p6ft_2100_high" }
+  ],
+  boundary: {
+    // Default: San Mateo County (FIPS 06081) from the Census TIGERweb service.
+    // This is the legal boundary, so it includes San Mateo's share of the Bay.
+    url: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/1",
+    where: "GEOID = '06081'",
+    // Alternative: put your own boundary file in the repo and point to it here,
+    // e.g. "data/boundary.geojson" (WGS84 lon/lat). When set, it is used instead.
+    geojsonUrl: null
+  },
+  // Areas that can be clipped out with a toggle. Add more cities by copying an entry
+  // (Census place GEOIDs are "06" + the 5-digit place code), or use geojsonUrl instead of url/where.
+  exclusions: [
+    {
+      id: "foster",
+      label: "Clip out Foster City",
+      url: "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer/4",
+      where: "GEOID = '0625338'",
+      geojsonUrl: null,
+      file: "excl_foster_city",
+      startOn: false
+    },
+    {
+      id: "sfo",
+      label: "Clip out SFO airport",
+      // Airport footprint from BCDC's Transportation layer (Airports, Caltrans 2024)
+      url: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/Transportation_and_Transit_Strategic_Regional_Priorities/FeatureServer/15",
+      where: "AirportID = 'SFO' OR Facility LIKE '%San Francisco Int%'",
+      geojsonUrl: null,
+      file: "excl_sfo",
+      startOn: false
     }
-    return r;
+  ],
+  // FEMA National Flood Hazard Layer, Flood Hazard Zones (S_FLD_HAZ_AR)
+  fema: {
+    url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+    where100: "SFHA_TF = 'T'",                                    // zones A, AE, AH, AO, AR, A99, V, VE
+    where500: "FLD_ZONE = 'X' AND (ZONE_SUBTY LIKE '0.2 PCT%' OR ZONE_SUBTY LIKE '%LEVEE%')",
+    minScale: 1000000                                             // drawn when zoomed in past ~1:1,000,000
+  },
+  // BCDC RSAP Strategic Regional Priorities. Each layer keeps BCDC's own symbols.
+  infraGroups: [
+    {
+      id: "transport", title: "Transportation & transit",
+      url: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/Transportation_and_Transit_Strategic_Regional_Priorities/FeatureServer",
+      layers: [
+        { id: 14, title: "Airport Priority Use Area (Bay Plan)" },
+        { id: 15, title: "Airports" },
+        { id: 16, title: "Ferry terminals" },
+        { id: 17, title: "Freight rail",   thin: true },
+        { id: 18, title: "Highways",       thin: true },
+        { id: 19, title: "Passenger rail", thin: true },
+        { id: 20, title: "Passenger rail stations" },
+        { id: 21, title: "Seaport Priority Use Areas (Bay Plan)" },
+        { id: 22, title: "Seaports" }
+      ]
+    },
+    {
+      id: "critical", title: "Critical infrastructure",
+      url: "https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/Critical_Infrastructure_Strategic_Regional_Priorities/FeatureServer",
+      layers: [
+        { id: 1,  title: "Wastewater treatment & wet weather facilities" },
+        { id: 2,  title: "Power plants" },
+        { id: 5,  title: "Healthcare facilities" },
+        { id: 8,  title: "Emergency operations centers" },
+        { id: 10, title: "Water-Related Industry Priority Use Area (Bay Plan)" }
+      ]
+    },
+    {
+      id: "oneshoreline", title: "OneShoreline",
+      layers: [
+        // ArcGIS Online item; its title, symbols and popup come from the item itself.
+        // It must be shared with Everyone (public) for the site to show it.
+        { portalUrl: "https://oneshoreline.maps.arcgis.com", itemId: "defe3431d7644a8bb0c676d937f3aaeb", layerId: 0,
+          color: [72, 229, 83],      // bright green; remove this line to use the item's own symbols
+          startOn: true }            // shown when the page opens
+      ]
+    }
+  ],
+  lineThinning: 0.6,   // "thin" layers draw at this fraction of BCDC's line width
+  basemap: "gray-vector",
+  altBasemap: "hybrid"
+};
+
+require([
+  "esri/Map",
+  "esri/views/MapView",
+  "esri/layers/FeatureLayer",
+  "esri/layers/GraphicsLayer",
+  "esri/layers/GroupLayer",
+  "esri/Graphic",
+  "esri/geometry/Polygon",
+  "esri/geometry/geometryEngine",
+  "esri/geometry/support/webMercatorUtils",
+  "esri/rest/query",
+  "esri/symbols/support/symbolUtils",
+  "esri/symbols/support/cimSymbolUtils",
+  "esri/widgets/ScaleBar"
+], function (Map, MapView, FeatureLayer, GraphicsLayer, GroupLayer, Graphic, Polygon,
+             geometryEngine, webMercatorUtils, query, symbolUtils, cimSymbolUtils, ScaleBar) {
+
+  const $ = (id) => document.getElementById(id);
+  const statusEl = $("status");
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg;
+    statusEl.className = isError ? "error" : "";
   }
-  var last = p.length - 1, from = now - RISE_HOLD_MIN * 60000;
-  for (var i = last; i >= 0; i--) {
-    if (p[i].t < from && !(i === last && !onChange)) break;
-    var r = meets(i);
-    if (r != null) return p[last].v < p[i].v - HOLD_TOLERANCE_FT ? null : { rise: r, i: i, held: i !== last || p[i].t < from, th: th };
-  }
-  return null;
-}
-function tideNowFor(id, now) {   // measured if recent, else predicted (needed only for rain + high tide triggers)
-  var T = C.tides[id]; if (!T) return null;
-  if (T.obs && now - T.obs.t < 3600000) return T.obs.v;
-  var best = null; (T.pred || []).forEach(function (x) { if (!best || Math.abs(x.t - now) < Math.abs(best.t - now)) best = x; });
-  return best && Math.abs(best.t - now) < 3600000 ? best.v : null;
-}
-function creekState(c, now) {
-  var gen = C.data.generated ? parseLocal(C.data.generated) : null;
-  var late = !gen || now - gen > CREEK_DATA_LATE_MIN * 60000;
-  var st = { c: c, late: late, gen: gen, top: null, stages: [], rising: [] };
-  var rainP = c.rain.map(function (g) { return pts(g.key); });
-  c.stages.forEach(function (g) {
-    var p = pts(g.key), last = p.length ? p[p.length - 1] : null;
-    var lat = C.data.sensors[g.key] && C.data.sensors[g.key].latest;
-    if (lat && (!last || parseLocal(lat[0]) > last.t)) { last = { t: parseLocal(lat[0]), v: lat[1] }; p = p.concat([last]); }
-    var qh = g.reports === "interval" ? GAUGE_QUIET_HOURS_INTERVAL : GAUGE_QUIET_HOURS;
-    var quiet = !last || now - last.t > qh * 3600000, prev = null;
-    for (var k = p.length - 2; k >= 0 && last; k--) { if (last.t - p[k].t >= 20 * 60000) { prev = p[k]; break; } }
-    var arrow = quiet || !prev ? "" : last.v > prev.v + 0.04 ? " ↑" : last.v < prev.v - 0.04 ? " ↓" : "";
-    var lvl = last && !quiet ? stageLevel(g, last.v) : null;
-    var s = { g: g, last: last, quiet: quiet, arrow: arrow, lvl: lvl, out: (C.data.sensors[g.key] || {}).out_of_service || null,
-      next: last ? (g.thresholds || []).filter(function (t) { return t.value > last.v; })[0] : null };
-    st.stages.push(s);
-    if (lvl && !late && (!st.top || lvl.level > st.top.level)) st.top = lvl;
-    // rapidly rising (riseCheck; see CONFIG)
-    if (!late && last && !quiet) {
-      var tidalOk = !g.tidal || rainP.some(function (rp) { return rainSum(rp, now - RISE_TIDAL_RAIN_HOURS * 3600000, now) >= RISE_TIDAL_RAIN_IN; });
-      var us = utcSeries(C.data.sensors[g.key]);
-      var rf = tidalOk ? riseCheck(us.p, g, us.utc ? Date.now() : now) : null;
-      if (rf) {
-        // no "at this rate" estimate while the alert is only being held: the rise may have stopped
-        var eta = s.next && !rf.held ? (s.next.value - last.v) / (rf.rise / (RISE_MINUTES / 60)) : null;
-        st.rising.push({ s: s, rise: rf.rise, at: us.p[rf.i].lt, held: rf.held, eta: eta != null && eta <= RISE_ETA_HOURS ? eta : null });
+
+  let active = CONFIG.scenarios.find((sc) => sc.id === CONFIG.defaultScenario) || CONFIG.scenarios[0];
+  let countyWM = null;           // county polygon in Web Mercator
+  let areaWM = null;             // county minus any excluded areas (what is shown/exported)
+  const exclusionGeoms = {};     // exclusion id -> polygon in Web Mercator
+  const excluded = new Set();    // exclusion ids currently switched on
+  const BAY_EXPR = "Hazard_Type <> 'Existing Bay'";
+
+  /* ---------- Hazard layers (live from the BCDC service) ----------
+     Every scenario gets four views of the same BCDC layer:
+       combined - BCDC's own combined-hazard symbology
+       gw       - every area with a groundwater component, colored by depth
+       tidal    - daily tidal inundation (MHHW)
+       surge    - every area with 100-year storm surge: translucent sky blue, drawn underneath
+                  (it overlaps the MHHW areas, so tidal and groundwater draw on top of it)
+     Only the views that are switched on (for the active scenario) are drawn. */
+  const GW_CLASSES = [
+    { value: "emergent", label: "Emergent (at the surface)",        color: [140, 45, 4] },
+    { value: "0-3",      label: "Very shallow (0–3 ft below ground)", color: [217, 72, 1] },
+    { value: "3-6",      label: "Shallow (3–6 ft below ground)",      color: [253, 141, 60] },
+    { value: "6-9",      label: "Moderately shallow (6–9 ft below ground)", color: [253, 208, 162] }
+  ];
+  const TIDAL_COLOR = [31, 78, 121];
+  const SURGE_COLOR = [64, 170, 214];        // light sky blue: between the pale Bay and the navy tidal layer
+  const SURGE_EDGE  = [24, 132, 196];
+  const COMBINED_LEGEND = [   // matches BCDC's renderer for these layers
+    { label: "Tidal inundation (MHHW), emergent groundwater",        color: [36, 65, 97] },
+    { label: "Storm surge (100-yr)",                                 color: [68, 100, 135] },
+    { label: "Storm surge (100-yr), emergent groundwater",           color: [54, 74, 29] },
+    { label: "Storm surge (100-yr), shallow groundwater (0–9 ft)",   color: [92, 112, 56] },
+    { label: "Emergent groundwater",                                 color: [97, 60, 78] },
+    { label: "Shallow groundwater (0–9 ft below ground)",            color: [135, 96, 115] },
+    { label: "Existing Bay",                                         color: [204, 237, 255], bay: true }
+  ];
+
+  const VIEWS = {
+    combined: { title: "Combined hazards", where: null, renderer: null },
+    gw: {
+      title: "Groundwater",
+      where: "Hazard_Type LIKE '%Groundwater%'",
+      renderer: {
+        type: "unique-value",
+        valueExpression:
+          "var t = $feature.Hazard_Type; " +
+          "When(Find('Emergent', t) > -1, 'emergent', Find('Very Shallow', t) > -1, '0-3', " +
+          "Find('Moderately Shallow', t) > -1, '6-9', Find('Shallow', t) > -1, '3-6', 'other')",
+        uniqueValueInfos: GW_CLASSES.map((c) => ({
+          value: c.value, label: c.label,
+          symbol: { type: "simple-fill", color: [...c.color, 0.8], outline: { color: [0, 0, 0, 0], width: 0 } }
+        }))
       }
+    },
+    tidal: {
+      title: "Tidal inundation (MHHW)",
+      where: "Hazard_Type = 'Tidal Inundation, Emergent Groundwater'",
+      renderer: { type: "simple", symbol: { type: "simple-fill", color: [...TIDAL_COLOR, 0.85],
+                  outline: { color: [0, 0, 0, 0], width: 0 } } }
+    },
+    surge: {
+      title: "Storm surge (100-year)",
+      where: "Hazard_Type LIKE '%Storm Surge%'",
+      renderer: { type: "simple", symbol: { type: "simple-fill", color: [...SURGE_COLOR, 0.45],
+                  outline: { color: [0, 0, 0, 0], width: 0 } } }
     }
-  });
-  // Accumulated rain over the creek's own windows (the ones on its OneRain dashboard and in its triggers);
-  // with two rain gauges, the larger total. A window whose rain trigger amount is reached is marked.
-  st.rains = (c.rain_windows || [60, 1440]).slice().sort(function (a, b) { return a - b; }).map(function (m) {
-    var v = Math.max.apply(null, rainP.map(function (rp) { return rainSum(rp, now - m * 60000, now); }).concat([0]));
-    var met = (c.rain_triggers || []).some(function (tr) { return tr.minutes === m && rainSum(pts(tr.gauge), now - m * 60000, now) >= tr.value; });
-    return { m: m, v: v, met: met };
-  });
-  (c.rain_triggers || []).forEach(function (tr) {
-    var amt = rainSum(pts(tr.gauge), now - tr.minutes * 60000, now), ok = amt >= tr.value;
-    if (ok && tr.high_tide) {
-      var tv = tideNowFor(c.tide, now), need = tr.tide_min != null ? tr.tide_min : LK.mhhw(c.tide);
-      ok = tv != null && need != null && tv >= need;
-    }
-    if (ok && !late && (!st.top || tr.level > st.top.level)) st.top = tr;
-  });
-  return st;
-}
-function statusOf(st) {
-  if (st.top) return { w: st.top.minutes ? LK.text("status_rain_trigger") : st.top.name.replace(/^Flood | Flood Stage$/g, ""), color: hex(st.top.color, "#c62828"),
-    ink: st.top.level === 1 ? "#1a1a1a" : "#fff", lvl: st.top.level };
-  if (st.late) return { w: LK.text("status_delayed"), color: "#66717d", ink: "#fff", lvl: 0 };
-  if (st.stages.length && st.stages.every(function (s) { return s.quiet; })) return { w: LK.text(st.stages.every(function (s) { return s.out; }) ? "gauge_out" : "status_offline"), color: "#66717d", ink: "#fff", lvl: 0 };
-  return { w: LK.text("status_normal"), color: "#2e7d32", ink: "#fff", lvl: 0, ok: true };
-}
-function renderCreeks() {
-  // every public creek (the 4 dashboard creeks and the 7 added Oct 16), so System status counts the same gauges as the board
-  var now = nowLocal(), states = (C.data.creeks || []).concat(C.data.creeks_preview || []).map(function (c) { return creekState(c, now); });
-  $("creeks").innerHTML = states.map(function (st) {
-    var s = statusOf(st), c = st.c;
-    var style = s.ok ? "" : ' style="border-color:' + s.color + ";background:color-mix(in srgb," + s.color + (s.lvl ? " 9%" : " 5%") + ',var(--card))"';
-    var h = '<a class="box ck' + (s.ok ? " ok" : "") + '" href="Creeks.html#' + encodeURIComponent(c.id) + '"' + style +
-      ' aria-label="' + esc(c.name) + ": " + esc(s.w) + '">' +
-      '<span class="nm">' + esc(c.name) + "</span>" +
-      '<span class="badge" style="background:' + s.color + ";color:" + s.ink + '">' + esc(s.w) + "</span>" +
-      (st.top && st.top.minutes ? '<span class="met">Met: ' + esc(st.top.label || "rain trigger") + "</span>" : "");
-    st.stages.forEach(function (x) {
-      h += '<span class="g"><span class="l">' + (st.stages.length > 1 ? esc(x.g.label) + " stage" : "Stage (creek level)") + "</span>";
-      if (x.out) h += '<span class="q"><b>' + esc(LK.text("gauge_out")) + "</b>" + (x.out.note ? " · " + esc(x.out.note) : "") + "</span>";
-      else if (!x.last) h += '<span class="q">no readings</span>';
-      else if (x.quiet) h += '<span class="q">not reporting since ' + esc(fmt(x.last.t, { month: "short", day: "numeric" })) + "</span>";
-      else h += "<b>" + x.last.v.toFixed(2) + x.arrow + "</b> ft · " + esc(fTime(x.last.t));
-      h += "</span>";
-    });
-    if (st.rains.length) h += '<span class="rain"><span class="l">Accumulated rain (in)</span>' + st.rains.map(function (r) {
-      var lab = r.m < 60 ? r.m + " min" : r.m / 60 + " hr";
-      return '<span class="' + (r.met ? "met" : "") + '">' + lab + " <b>" + (r.v < 0.005 ? "0" : r.v.toFixed(2)) + "</b></span>"; }).join(" · ") + "</span>";
-    return h + '<span class="go">Details ›</span></a>';
-  }).join("");
+  };
+  const VIEW_ORDER = ["combined", "surge", "gw", "tidal"];   // bottom to top: surge (broadest) underneath, so tidal and groundwater stay visible
 
-  // Rapidly rising
-  var rising = []; states.forEach(function (st) { st.rising.forEach(function (r) { r.st = st; rising.push(r); }); });
-  $("rising").innerHTML = rising.map(function (r) {
-    var x = r.s, c = r.st.c, red = x.lvl && x.lvl.level >= 3 || (r.eta != null && x.next && x.next.level >= 3);
-    var eta = r.eta == null ? "" : " At this rate it reaches " + esc(x.next.name) + " (" + x.next.value.toFixed(2) + " ft) in about " +
-      (r.eta < 1 ? Math.max(5, Math.round(r.eta * 60 / 5) * 5) + " min" : (Math.round(r.eta * 2) / 2) + " hr") + ".";
-    return '<a class="box rs ' + (red ? "red" : "amber") + '" href="Creeks.html#' + encodeURIComponent(c.id) + '"><span class="ar">⇡</span><span>' +
-      "<h3>Rapidly rising: " + esc(c.name) + (c.stages.length > 1 ? " at " + esc(x.g.label) : "") + "</h3>" +
-      "<p>" + (r.held ? "Rose " + r.rise.toFixed(2) + " ft in " + (RISE_MINUTES === 60 ? "an hour" : RISE_MINUTES + " min") + ", up to " + esc(fTime(r.at)) + "; now "
-        : "Up " + r.rise.toFixed(2) + " ft in the last " + (RISE_MINUTES === 60 ? "hour" : RISE_MINUTES + " min") + ", now ") +
-      x.last.v.toFixed(2) + " ft (" + esc(fTime(x.last.t)) + ")." + eta + "</p></span></a>";
-  }).join("");
-  var anyLate = states.some(function (s) { return s.late; });
-  var CS = window.CREEK_STATUS;
-  if (CS && CS.preview) {   // creek status layer (STATUS_PUBLIC, or ?preview=1) in place of the creek cards and rapid-rise cards
-    var HM = CS.home(C.data, function (c) { return "Creeks.html" + PV_Q + "#" + encodeURIComponent(c.id); }, { nws: NWS.list || [] });
-    $("csPreview").innerHTML = HM.html;
-    CR = HERO.creeks(C.data, NWS.list || []);   // for the alert at the top: the same words as the creek board
-    renderHero();
-    $("creeks").style.display = $("rising").style.display = $("calm").style.display = "none";
-    $("creeksLink").href = "Creeks.html" + PV_Q;
-    var nc = document.querySelector('nav a[href^="Creeks.html"]'); if (nc) nc.href = "Creeks.html" + PV_Q;
+  const layers = {};   // layers[scenarioId][viewKey] = FeatureLayer
+  const hazardLayers = [];
+  CONFIG.scenarios.forEach((sc) => {
+    layers[sc.id] = {};
+    VIEW_ORDER.forEach((key) => {
+      const v = VIEWS[key];
+      const props = {
+        url: `${CONFIG.serviceUrl}/${sc.id}`,
+        title: `${v.title}: ${sc.label} (${sc.sub})`,
+        visible: false,
+        opacity: Number($("opacity").value),
+        outFields: ["Hazard_Type"],
+        definitionExpression: v.where,
+        popupTemplate: {
+          title: "{Hazard_Type}",
+          content: `<b>Scenario:</b> ${sc.label} (${sc.sub})<br>` +
+                   `<span style="color:#666">BCDC RSAP Coastal Flood Hazards. Planning-level data.</span>`
+        }
+      };
+      if (v.renderer) props.renderer = v.renderer;
+      const lyr = new FeatureLayer(props);
+      layers[sc.id][key] = lyr;
+      hazardLayers.push(lyr);
+    });
+  });
+  // Draw order: all combined layers first, then groundwater, tidal, surge on top
+  hazardLayers.sort((a, b) => VIEW_ORDER.indexOf(viewKeyOf(a)) - VIEW_ORDER.indexOf(viewKeyOf(b)));
+  function viewKeyOf(lyr) {
+    for (const id in layers) for (const k in layers[id]) if (layers[id][k] === lyr) return k;
   }
-  $("calm").textContent = rising.length ? "" : anyLate ? "Rapid-rise check paused: creek data is delayed." :
-    "No creek gauges rising rapidly.";
+  const viewOn = (key) => $("lyr_" + key).checked;
 
-  // System status rows for creek data and gauges
-  var gen = states.length ? states[0].gen : null;
-  sys("dCreek", "vCreek", anyLate ? "dq" : "ok", gen ? (anyLate ? "Delayed · last updated " + agoText(now - gen) : "Current · updated " + fTime(gen) + " " + tzAbbr()) : "No update time");
-  var all = [], off = [], outs = [];
-  states.forEach(function (st) { st.stages.forEach(function (x) { all.push(x); if (x.out) outs.push({ st: st, x: x }); else if (x.quiet) off.push({ st: st, x: x }); }); });
-  var nm = function (o) { return o.st.c.name + (o.st.c.stages.length > 1 ? " (" + o.x.g.label + ")" : ""); };
-  sys("dGauges", "vGauges", off.length || outs.length ? "dq" : "ok", (all.length - off.length - outs.length) + " of " + all.length + " reporting" +
-    (outs.length ? " · out of service: " + outs.map(function (o) { return nm(o) + (o.x.out.note ? " (" + o.x.out.note.replace(/\.$/, "") + ")" : ""); }).join(", ") : "") +
-    (off.length ? " · not reporting: " + off.map(function (o) { return nm(o) + (o.x.last ? " since " + fmt(o.x.last.t, { month: "short", day: "numeric" }) : ""); }).join(", ") : ""));
-}
-// Only shown when a lookups/ file couldn't be read or has a mistake (the page then uses its built-in values)
-function lookStatus() {
-  $("rLook").hidden = !LK.problems.length;
-  $("vLook").textContent = LK.problems.length ? "using built-in values: " + LK.problems.join("; ") : "";
-}
-function sys(dot, val, cls, text) { $(dot).className = "dot " + (cls || ""); $(val).textContent = text; }
-
-function loadTides() {   // only the stations that a rain + high tide trigger needs
-  var ids = [];
-  (C.data.creeks || []).forEach(function (c) { (c.rain_triggers || []).forEach(function (tr) { if (tr.high_tide && ids.indexOf(c.tide) < 0) ids.push(c.tide); }); });
-  return Promise.all(ids.map(function (id) {
-    var base = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=" + encodeURIComponent(id) +
-      "&datum=NAVD&time_zone=lst_ldt&units=english&format=json&application=OneShorelineFEWS";
-    var T = C.tides[id] = C.tides[id] || {};
-    return Promise.all([
-      getJSON(base + "&product=water_level&date=latest").then(function (j) { var x = (j.data || [])[0]; T.obs = x ? { t: parseLocal(x.t), v: parseFloat(x.v) } : null; }).catch(function () {}),
-      getJSON(base + "&product=predictions&date=today").then(function (j) { T.pred = (j.predictions || []).map(function (x) { return { t: parseLocal(x.t), v: parseFloat(x.v) }; }); }).catch(function () {})
-    ]);
-  }));
-}
-function creeks() {
-  getJSON(DATA + "creeks.json?t=" + Date.now()).then(function (d) {
-    C.data = d; renderCreeks();
-    return loadTides().then(renderCreeks);
-  }).catch(function () {
-    if (!C.data) $("creeks").innerHTML = '<div class="box ck gray" style="grid-column:1/-1"><span class="nm">Creek data unavailable right now</span><span class="g">Retrying in a few minutes. <a href="Creeks.html">Creek page ›</a></span></div>';
-    sys("dCreek", "vCreek", "dq", "Unavailable right now");
-  });
-}
-
-/* ---------- Tides: Bayside (Redwood City) and Coastside (Monterey), same rule as the Tides page and the kiosk ---------- */
-// Heights in ft NAVD88 from one series: measured (Bayside only) for what has happened, then NOAA's model forecast
-// (ofs_water_level, about 2 days), then the tide table. Short text here; the Tides page has the rest.
-var TIDE_DAYS = 7;
-var TSIDES = [
-  { el: "tide", id: "9414523", name: "Bayside", water: "Bay", red: "TIDE_RED_FT_RWC", king: "KING_TIDE_FT_RWC", obs: true },
-  { el: "tideCoast", id: "9413450", name: "Coastside", water: "ocean", red: null, king: "KING_TIDE_FT_MRY", obs: false }
-];
-TSIDES.forEach(function (T) { T.d = { obs: null, ofs: null, pred: null }; });
-function ymd(ms) { var d = new Date(ms); return d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0"); }
-function dayStart(ms) { var d = new Date(ms); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); }
-function relDay(ms, now) { var d = Math.round((dayStart(ms) - dayStart(now)) / 864e5); return d === 0 ? "Today" : d === 1 ? "Tomorrow" : fmt(ms, { weekday: "short", month: "short", day: "numeric" }); }
-function noaaURL(station, product, b, e) {
-  return "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=" + station + "&product=" + product + "&begin_date=" + b + "&end_date=" + e +
-    "&datum=NAVD&time_zone=lst_ldt&units=english&format=json&application=OneShorelineFEWS";
-}
-function toPts(a) { return (a || []).map(function (x) { return { t: parseLocal(x.t), v: parseFloat(x.v) }; }).filter(function (x) { return !isNaN(x.v); }); }
-function loadTide() {
-  var now = nowLocal(), y = ymd(now - 864e5), t0 = ymd(now), t6 = ymd(now + 6 * 864e5), t3 = ymd(now + 3 * 864e5);
-  TSIDES.forEach(function (T) {
-    var D = T.d;
-    Promise.all([
-      getJSON(noaaURL(T.id, "predictions", t0, t6)).then(function (j) { D.pred = toPts(j.predictions); }),
-      T.obs ? getJSON(noaaURL(T.id, "water_level", y, t0)).then(function (j) { D.obs = toPts(j.data); }).catch(function () {}) : null,
-      getJSON(noaaURL(T.id, "ofs_water_level", y, t3)).then(function (j) { var p = toPts(j.data || j.predictions); D.ofs = p.length ? p : null; }).catch(function () { D.ofs = null; })
-    ]).then(function () { D.tried = true; renderTide(T); }).catch(function () { D.tried = true; renderTide(T); });
-  });
-}
-function renderTide(T) {
-  if (!T) { TSIDES.forEach(function (x) { renderTide(x); }); return; }
-  if (!T.d.tried) return;   // still loading
-  var el = $(T.el), st = HERO.tideState({ D: T.d, mhhw: LK.mhhw(T.id), red: T.red ? LK.num(T.red) : Infinity, water: T.water, nws: NWS.list || [], days: TIDE_DAYS });
-  var c = HERO.tideCard(st, T.name);
-  if (T.el === "tide") TIDE_STATE.bay = st; else TIDE_STATE.coast = st;
-  el.className = c.cls; el.setAttribute("aria-label", c.label + " Tide details.");
-  el.innerHTML = c.html + '<span class="go2" aria-hidden="true">›</span>';
-  if (T.el === "tide") renderHero(); else renderOrder();
-}
-
-/* ---------- Monitoring network ---------- */
-function sites() {
-  getJSON(DATA + "sites.json?t=" + Date.now()).then(function (d) {
-    var now = nowLocal(), n = 0, alert = 0, top = 0, off = 0;
-    (d.sites || []).forEach(function (site) {
-      if (!site.sensors || !site.sensors.length) return;
-      n++;
-      var newest = 0, lvl = 0;
-      site.sensors.forEach(function (s) {
-        if (s.time) newest = Math.max(newest, parseLocal(s.time));
-        if (s.thresholds && s.value != null) s.thresholds.forEach(function (t) { if (s.value >= t.value) lvl = Math.max(lvl, t.level); });
-      });
-      if (!newest || now - newest > SITE_QUIET_HOURS * 36e5) off++;
-      else if (lvl) { alert++; top = Math.max(top, lvl); }
+  function updateVisibility() {
+    CONFIG.scenarios.forEach((sc) => {
+      VIEW_ORDER.forEach((key) => { layers[sc.id][key].visible = (sc === active) && viewOn(key); });
     });
-    sys("dSites", "vSites", alert ? (top >= 3 ? "red" : "amber") : off ? "dq" : "ok",
-      (n - off) + " of " + n + " sites reporting" + (alert ? " · " + alert + (alert === 1 ? " site" : " sites") + " at an alert level" : " · none at an alert level"));
-  }).catch(function () { sys("dSites", "vSites", "dq", "Unavailable right now"); });
-}
+    renderLegend();
+  }
 
-function all() { nws(); creeks(); sites(); loadTide(); }
-LK.onChange(function () { applyLookups(); lookStatus(); if (C.data) renderCreeks(); renderTide(); });   // edited lookups/ files
-all();
-setInterval(all, 5 * 60000);
-setInterval(function () { if (C.data) renderCreeks(); renderTide(); }, 60000);
-document.addEventListener("visibilitychange", function () { if (!document.hidden) all(); });
-// Report tab in the bottom bar: staff preview, or everyone once REPORTS_PUBLIC = 1 (lookups/settings.csv)
-function reportNav() {
-  var nv = document.querySelector("nav"), pv = /[?&]preview=1\b/.test(location.search), on = pv || LK.num("REPORTS_PUBLIC") === 1;
-  if (!nv || !on || nv.querySelector('a[href^="CommunityFloodReports.html"]')) return;
-  var a = document.createElement("a"); a.href = "CommunityFloodReports.html" + (pv ? "?preview=1" : "");
-  a.innerHTML = '<span class="i" aria-hidden="true">📍</span>Report';
-  nv.insertBefore(a, nv.querySelector('a[href^="Creeks.html#about"]'));
-}
-reportNav(); LK.onChange(reportNav);
+  /* ---------- The clip: a county-shaped mask with "destination-in" ----------
+     Inside a GroupLayer, a layer with blendMode "destination-in" keeps only the
+     pixels of the layers beneath it that fall under its own shapes. Drawing the
+     county polygon there shows hazards inside San Mateo and nothing outside,
+     while the basemap (outside the group) stays visible everywhere. */
+  /* ---------- FEMA flood zones (same for every scenario) ---------- */
+  const femaPopup = {
+    title: "FEMA Zone {FLD_ZONE}",
+    content: "<b>Subtype:</b> {ZONE_SUBTY}<br><b>Special Flood Hazard Area:</b> {SFHA_TF}<br>" +
+             "<b>Static BFE:</b> {STATIC_BFE}<br>" +
+             "<span style='color:#666'>FEMA National Flood Hazard Layer (effective FIRM).</span>"
+  };
+  const fema500 = new FeatureLayer({
+    url: CONFIG.fema.url, title: "FEMA 500-year floodplain", visible: false,
+    definitionExpression: CONFIG.fema.where500, minScale: CONFIG.fema.minScale,
+    outFields: ["FLD_ZONE", "ZONE_SUBTY", "SFHA_TF", "STATIC_BFE"], popupTemplate: femaPopup,
+    renderer: { type: "simple", symbol: { type: "simple-fill", color: [240, 128, 128, 0.35],
+                outline: { color: [0, 0, 0, 0], width: 0 } } }
+  });
+  const fema100 = new FeatureLayer({
+    url: CONFIG.fema.url, title: "FEMA 100-year floodplain", visible: false,
+    definitionExpression: CONFIG.fema.where100, minScale: CONFIG.fema.minScale,
+    outFields: ["FLD_ZONE", "ZONE_SUBTY", "SFHA_TF", "STATIC_BFE"], popupTemplate: femaPopup,
+    renderer: { type: "simple", symbol: { type: "simple-fill", color: [196, 30, 58, 0.45],
+                outline: { color: [0, 0, 0, 0], width: 0 } } }
+  });
+  // Erases FEMA zones over open water, using BCDC's "Existing Bay" polygon from the hazard layers
+  const femaWaterMask = new GraphicsLayer({ blendMode: "destination-out", listMode: "hide", legendEnabled: false });
+  const femaGroup = new GroupLayer({ title: "FEMA flood zones", layers: [fema500, fema100, femaWaterMask] });
+  let bayLoading = null;
+  function ensureBayMask() {
+    if (!$("femaLandOnly").checked || bayLoading) return;
+    if (!$("fema100").checked && !$("fema500").checked) return;
+    bayLoading = query.executeQueryJSON(`${CONFIG.serviceUrl}/${CONFIG.scenarios[0].id}`, {
+      where: "Hazard_Type = 'Existing Bay'",
+      geometry: countyWM || undefined,
+      spatialRelationship: "intersects",
+      returnGeometry: true,
+      outSpatialReference: { wkid: 102100 },
+      maxAllowableOffset: 5            // simplify to ~5 m; plenty for a water mask
+    }).then((fs) => {
+      femaWaterMask.removeAll();
+      fs.features.forEach((f) => femaWaterMask.add(new Graphic({
+        geometry: f.geometry,
+        symbol: { type: "simple-fill", color: [0, 0, 0, 1], outline: { color: [0, 0, 0, 0], width: 0 } }
+      })));
+    }).catch((err) => {
+      console.error(err);
+      bayLoading = null;
+      setStatus("Couldn't load the Bay shoreline for the FEMA land-only option. (" + err.message + ")", true);
+    });
+  }
+
+  [fema500, fema100].forEach((l) => l.load().catch((err) => {
+    console.error(err);
+    setStatus("Couldn't reach FEMA's flood map service. Try again later. (" + err.message + ")", true);
+  }));
+
+  /* ---------- BCDC regional priority layers (transportation, critical infrastructure) ---------- */
+  const infraLayers = [];   // { key, group, title, layer }
+  CONFIG.infraGroups.forEach((grp) => {
+    grp.layers.forEach((d, n) => {
+      const lyr = d.itemId
+        ? new FeatureLayer({ portalItem: { id: d.itemId, portal: { url: d.portalUrl } }, layerId: d.layerId,
+                             visible: !!d.startOn, outFields: ["*"] })
+        : new FeatureLayer({ url: `${grp.url}/${d.id}`, title: d.title, visible: !!d.startOn, outFields: ["*"] });
+      const x = { key: `${grp.id}_${d.id ?? n}`, group: grp, title: d.title || "Loading…", layer: lyr };
+      x.ready = lyr.when(() => {
+        if (!d.title) setInfraTitle(x, lyr.title || "OneShoreline layer");
+        // Popups: keep the item's own popup if it has one, otherwise list the layer's fields
+        if (!lyr.popupTemplate) {
+          lyr.popupTemplate = lyr.createPopupTemplate();
+          if (lyr.popupTemplate) lyr.popupTemplate.title = x.title;
+        }
+        if (d.thin && lyr.geometryType === "polyline") lyr.renderer = thinRenderer(lyr.renderer);
+        if (d.color) lyr.renderer = solidRenderer(lyr.geometryType, d.color);
+      }).catch((err) => {
+        console.error(x.title, err);
+        setInfraTitle(x, (d.title || "OneShoreline layer") + " (couldn't load)");
+        if (x.box) { x.box.disabled = true; x.box.parentElement.style.opacity = 0.5;
+                     x.box.parentElement.title = err.message; }
+      });
+      infraLayers.push(x);
+    });
+  });
+  // One-color symbol for a layer, matched to its geometry
+  function solidRenderer(geomType, rgb) {
+    let symbol;
+    if (geomType === "polygon") {
+      symbol = { type: "simple-fill", color: [...rgb, 0.15], outline: { color: [...rgb, 1], width: 2 } };
+    } else if (geomType === "polyline") {
+      symbol = { type: "simple-line", color: [...rgb, 1], width: 2.5 };
+    } else {
+      symbol = { type: "simple-marker", style: "circle", size: 9, color: [...rgb, 1],
+                 outline: { color: [255, 255, 255, 1], width: 1 } };
+    }
+    return { type: "simple", symbol };
+  }
+
+  function setInfraTitle(x, title) {
+    x.title = title;
+    if (x.labelText) x.labelText.textContent = " " + title;
+    if (x.layer.visible) renderLegend();
+  }
+
+  // Scale line symbols down (simple-line or CIM) for a lighter look
+  function thinSymbol(sym) {
+    if (!sym) return sym;
+    const k = CONFIG.lineThinning;
+    const c = sym.clone();
+    if (c.type === "simple-line") c.width = Math.max(1, c.width * k);
+    else if (c.type === "cim") {
+      const size = cimSymbolUtils.getCIMSymbolSize(c);
+      if (size) cimSymbolUtils.scaleCIMSymbolTo(c, Math.max(1, size * k));
+    }
+    return c;
+  }
+  function thinRenderer(r) {
+    if (!r) return r;
+    const c = r.clone();
+    if (c.symbol) c.symbol = thinSymbol(c.symbol);
+    if (c.defaultSymbol) c.defaultSymbol = thinSymbol(c.defaultSymbol);
+    (c.uniqueValueInfos || []).forEach((i) => { i.symbol = thinSymbol(i.symbol); });
+    (c.classBreakInfos || []).forEach((i) => { i.symbol = thinSymbol(i.symbol); });
+    return c;
+  }
+
+  // Draw areas first, then lines, then points, so points stay on top
+  const geomRank = { polygon: 0, polyline: 1, point: 2, multipoint: 2 };
+  const infraOrdered = infraLayers.map((x) => x.layer);
+  Promise.allSettled(infraOrdered.map((l) => l.load())).then(() => {
+    const sorted = infraOrdered.slice().sort((a, b) =>
+      (geomRank[a.geometryType] ?? 1) - (geomRank[b.geometryType] ?? 1));
+    const base = Math.min(...infraOrdered.map((l) => hazardGroup.layers.indexOf(l)));
+    sorted.forEach((l, i) => hazardGroup.layers.reorder(l, base + i));
+    hazardGroup.layers.reorder(maskLayer, hazardGroup.layers.length - 1);
+  });
+
+  const maskLayer = new GraphicsLayer({ blendMode: "destination-in", listMode: "hide", legendEnabled: false });
+  const hazardGroup = new GroupLayer({
+    title: "Coastal flood hazards",
+    layers: [...hazardLayers, femaGroup, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
+    visible: false                          // shown once the boundary has loaded
+  });
+  const outlineLayer = new GraphicsLayer({ listMode: "hide" });
+
+  const map = new Map({ basemap: CONFIG.basemap, layers: [hazardGroup, outlineLayer] });
+  const view = new MapView({
+    container: "viewDiv",
+    map,
+    center: [-122.33, 37.5],
+    zoom: 10,
+    popup: { dockEnabled: false }
+  });
+  view.ui.add(new ScaleBar({ view, unit: "dual" }), "bottom-left");
+
+  /* ---------- Map legend (reflects whatever is switched on) ---------- */
+  const legendEl = document.createElement("div");
+  legendEl.id = "mapLegend";
+  legendEl.innerHTML = `<button class="lg-head" type="button" aria-expanded="true">Legend <span>▾</span></button>
+                        <div class="lg-body"></div>`;
+  legendEl.querySelector(".lg-head").addEventListener("click", () => {
+    const c = legendEl.classList.toggle("collapsed");
+    legendEl.querySelector(".lg-head").setAttribute("aria-expanded", String(!c));
+    legendEl.querySelector(".lg-head span").textContent = c ? "▸" : "▾";
+  });
+  view.ui.add(legendEl, "top-right");
+  if (window.matchMedia("(max-width: 760px)").matches) legendEl.querySelector(".lg-head").click();
+
+  function renderLegend() {
+    const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+    const item = (swatch, label) => `<div class="lg-item">${swatch}<span>${label}</span></div>`;
+    const fill = (c, a) => `<span class="sw" style="background:${rgba(c, a)}"></span>`;
+    let html = `<div style="color:var(--muted);margin-bottom:2px">${active.label} (${active.sub})</div>`;
+    if (viewOn("tidal")) html += `<h3>Tidal inundation</h3>` + item(fill(TIDAL_COLOR, 0.85), "Daily high tide (MHHW)");
+    if (viewOn("surge")) html += `<h3>Storm surge</h3>` + item(fill(SURGE_COLOR, 0.45), "100-year storm surge area (includes MHHW areas)");
+    if (viewOn("gw")) html += `<h3>Groundwater</h3>` + GW_CLASSES.map((c) => item(fill(c.color, 0.8), c.label)).join("");
+    if (viewOn("combined")) {
+      html += `<h3>Combined hazards</h3>` + COMBINED_LEGEND
+        .filter((c) => !c.bay || $("showBay").checked)
+        .map((c) => item(fill(c.color, 0.75), c.label)).join("");
+    }
+    if ($("fema100").checked || $("fema500").checked) {
+      html += `<h3>FEMA flood zones</h3>`;
+      if ($("fema100").checked) html += item(`<span class="sw fema100"></span>`, "100-year (1% annual chance)");
+      if ($("fema500").checked) html += item(`<span class="sw fema500"></span>`, "500-year (0.2% annual chance)");
+      if ($("femaLandOnly").checked) html += `<div class="lg-item" style="color:var(--muted)">Land only: zones over the Bay hidden.</div>`;
+      if (view.scale > CONFIG.fema.minScale) html += `<div class="lg-item" style="color:var(--muted)">Zoom in to see FEMA zones.</div>`;
+    }
+    const infraOn = infraLayers.filter((x) => x.layer.visible);
+    CONFIG.infraGroups.forEach((grp) => {
+      const on = infraOn.filter((x) => x.group === grp);
+      if (!on.length) return;
+      html += `<h3>${grp.title}</h3>` + on.map((x) => `<div class="lg-infra" data-key="${x.key}"></div>`).join("");
+    });
+    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked && !infraOn.length) html += `<div class="lg-item">No hazard layers switched on.</div>`;
+    html += `<h3>Boundaries</h3>`;
+    if ($("showOutline").checked) html += item(`<span class="sw line"></span>`, "San Mateo County");
+    if (excluded.size) html += item(`<span class="sw dash"></span>`, "Clipped-out area");
+    legendEl.querySelector(".lg-body").innerHTML = html;
+    legendEl.querySelectorAll(".lg-infra").forEach((el) => {
+      const x = infraLayers.find((i) => i.key === el.dataset.key);
+      if (x) fillInfraLegend(x, el);
+    });
+  }
+
+  // Legend entries for a BCDC layer, drawn from that layer's own symbols
+  function lineSwatch(sym) {
+    const c = sym.color ? sym.color.toRgba() : [0, 0, 0, 1];
+    const w = Math.min(4, Math.max(1.5, sym.width || 1.5));
+    const dash = sym.style && sym.style !== "solid" ? ' stroke-dasharray="4 3"' : "";
+    const span = document.createElement("span");
+    span.innerHTML = `<svg width="22" height="14" viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" ` +
+      `stroke="rgba(${c[0]},${c[1]},${c[2]},${c[3]})" stroke-width="${w}" stroke-linecap="round"${dash}/></svg>`;
+    return span.firstChild;
+  }
+  function fallbackSwatch() {
+    const span = document.createElement("span");
+    span.innerHTML = `<svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="#8a8f94" stroke="#fff" stroke-width="1"/></svg>`;
+    return span.firstChild;
+  }
+  async function previewNode(sym) {
+    if (!sym) return fallbackSwatch();
+    if (sym.type === "simple-line") return lineSwatch(sym);
+    try {
+      return await symbolUtils.renderPreviewHTML(sym, { size: 14, maxSize: 18 });
+    } catch (e) { return fallbackSwatch(); }
+  }
+  async function fillInfraLegend(x, el) {
+    try {
+      await x.ready;
+      const r = x.layer.renderer;
+      let infos = [];
+      if (r && r.type === "simple") infos = [{ symbol: r.symbol, label: x.title }];
+      else if (r && r.uniqueValueInfos) infos = r.uniqueValueInfos.map((i) => ({ symbol: i.symbol, label: i.label || String(i.value) }));
+      else if (r && r.classBreakInfos) infos = r.classBreakInfos.map((i) => ({ symbol: i.symbol, label: i.label || "" }));
+      const frag = document.createDocumentFragment();
+      if (r && r.type !== "simple" && infos.length) {
+        const h = document.createElement("div");
+        h.className = "lg-sub"; h.textContent = x.title; frag.appendChild(h);
+        infos = infos.slice(0, 12);
+      }
+      if (!infos.length) infos = [{ symbol: null, label: x.title }];
+      for (const i of infos) {
+        const row = document.createElement("div");
+        row.className = "lg-item";
+        const prev = document.createElement("span");
+        prev.className = "lg-prev";
+        prev.appendChild(await previewNode(i.symbol));
+        const lab = document.createElement("span");
+        lab.textContent = i.label;
+        row.append(prev, lab);
+        frag.appendChild(row);
+      }
+      el.replaceChildren(frag);
+      // If a symbol drew nothing (e.g. an icon that failed to load), show a neutral marker instead
+      requestAnimationFrame(() => {
+        el.querySelectorAll(".lg-prev").forEach((p) => {
+          const kid = p.firstElementChild;
+          const box = kid && kid.getBoundingClientRect();
+          if (!kid || box.width < 2 || box.height < 2) p.replaceChildren(fallbackSwatch());
+        });
+      });
+    } catch (err) {
+      console.error(err);
+      el.innerHTML = "";
+      const row = document.createElement("div");
+      row.className = "lg-item";
+      const prev = document.createElement("span"); prev.className = "lg-prev"; prev.appendChild(fallbackSwatch());
+      const lab = document.createElement("span"); lab.textContent = x.title;
+      row.append(prev, lab); el.appendChild(row);
+    }
+  }
+
+  // No popups for clicks outside the shown area (those features are hidden by the mask)
+  view.on("click", (event) => {
+    if (areaWM && !geometryEngine.contains(areaWM, event.mapPoint)) {
+      event.stopPropagation();
+    }
+  });
+
+  /* ---------- Sidebar controls ---------- */
+  const scWrap = $("scenarios");
+  CONFIG.scenarios.forEach((sc, i) => {
+    const lab = document.createElement("label");
+    lab.className = "scenario";
+    lab.innerHTML = `<input type="radio" name="sc" ${sc === active ? "checked" : ""}>
+                     <div>${sc.label}<span>${sc.sub}</span></div>`;
+    lab.querySelector("input").addEventListener("change", () => selectScenario(sc));
+    scWrap.appendChild(lab);
+  });
+
+  function selectScenario(sc) {
+    active = sc;
+    updateVisibility();
+    view.closePopup ? view.closePopup() : view.popup.close();
+    $("summary").innerHTML = "";
+  }
+
+  $("opacity").addEventListener("input", (e) => {
+    hazardLayers.forEach((l) => { l.opacity = Number(e.target.value); });
+  });
+  $("showBay").addEventListener("change", (e) => {
+    CONFIG.scenarios.forEach((sc) => { layers[sc.id].combined.definitionExpression = e.target.checked ? null : BAY_EXPR; });
+    renderLegend();
+  });
+  $("showOutline").addEventListener("change", (e) => { outlineLayer.visible = e.target.checked; renderLegend(); });
+  VIEW_ORDER.forEach((key) => $("lyr_" + key).addEventListener("change", updateVisibility));
+  $("fema100").addEventListener("change", (e) => { fema100.visible = e.target.checked; ensureBayMask(); renderLegend(); });
+  $("fema500").addEventListener("change", (e) => { fema500.visible = e.target.checked; ensureBayMask(); renderLegend(); });
+  $("femaLandOnly").addEventListener("change", (e) => { femaWaterMask.visible = e.target.checked; ensureBayMask(); renderLegend(); });
+  const infraWrap = $("infraControls");
+  CONFIG.infraGroups.forEach((grp) => {
+    const head = document.createElement("div");
+    head.className = "grp-head";
+    head.innerHTML = `<span>${grp.title}</span><a role="button" tabindex="0">All</a>`;
+    infraWrap.appendChild(head);
+    const boxes = [];
+    infraLayers.filter((x) => x.group === grp).forEach((x) => {
+      const lab = document.createElement("label");
+      lab.className = "row";
+      lab.innerHTML = `<input type="checkbox"><span></span>`;
+      const box = lab.querySelector("input");
+      box.checked = x.layer.visible;
+      x.labelText = lab.querySelector("span");
+      x.labelText.textContent = " " + x.title;
+      box.addEventListener("change", () => { x.layer.visible = box.checked; renderLegend(); });
+      x.box = box; boxes.push(box);
+      infraWrap.appendChild(lab);
+    });
+    const toggleAll = () => {
+      const turnOn = !boxes.every((b) => b.checked);
+      boxes.forEach((b) => { b.checked = turnOn; b.dispatchEvent(new Event("change")); });
+      head.querySelector("a").textContent = turnOn ? "None" : "All";
+    };
+    head.querySelector("a").addEventListener("click", toggleAll);
+    head.querySelector("a").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleAll(); } });
+  });
+
+  view.watch("scale", () => { if ($("fema100").checked || $("fema500").checked) renderLegend(); });
+  $("imagery").addEventListener("change", (e) => {
+    map.basemap = e.target.checked ? CONFIG.altBasemap : CONFIG.basemap;
+  });
+
+  /* ---------- Boundaries (county + optional exclusion areas) ---------- */
+  async function loadPolygon(src) {
+    let geo;
+    if (src.geojsonUrl) {
+      const gj = await (await fetch(src.geojsonUrl)).json();
+      const feats = gj.type === "FeatureCollection" ? gj.features : [gj.type === "Feature" ? gj : { geometry: gj }];
+      const rings = [];
+      feats.forEach((f) => {
+        const g = f.geometry;
+        const polys = g.type === "Polygon" ? [g.coordinates] : g.coordinates;
+        // GeoJSON rings run opposite to Esri's convention, so reverse them
+        polys.forEach((p) => p.forEach((r) => rings.push(r.slice().reverse())));
+      });
+      geo = geometryEngine.simplify(new Polygon({ rings, spatialReference: { wkid: 4326 } }));
+    } else {
+      const fs = await query.executeQueryJSON(src.url, {
+        where: src.where,
+        outFields: [],
+        returnGeometry: true,
+        outSpatialReference: { wkid: 4326 }
+      });
+      if (!fs.features.length) throw new Error("Boundary query returned no features.");
+      geo = fs.features.length === 1 ? fs.features[0].geometry
+                                     : geometryEngine.union(fs.features.map((f) => f.geometry));
+    }
+    return webMercatorUtils.geographicToWebMercator(geo);
+  }
+
+  // Recompute "county minus excluded areas" and redraw the mask and outlines
+  function rebuildArea() {
+    let g = countyWM;
+    excluded.forEach((id) => {
+      if (exclusionGeoms[id] && g) g = geometryEngine.difference(g, exclusionGeoms[id]);
+    });
+    areaWM = g;
+    maskLayer.removeAll();
+    maskLayer.add(new Graphic({
+      geometry: areaWM,
+      symbol: { type: "simple-fill", color: [0, 0, 0, 1], outline: { color: [0, 0, 0, 0], width: 0 } }
+    }));
+    outlineLayer.removeAll();
+    outlineLayer.add(new Graphic({
+      geometry: countyWM,
+      symbol: { type: "simple-fill", color: [0, 0, 0, 0], outline: { color: [36, 65, 97, 0.9], width: 1.6 } }
+    }));
+    excluded.forEach((id) => {
+      if (!exclusionGeoms[id]) return;
+      outlineLayer.add(new Graphic({
+        geometry: exclusionGeoms[id],
+        symbol: { type: "simple-fill", color: [120, 120, 120, 0.12],
+                  outline: { color: [90, 90, 90, 0.9], width: 1.2, style: "dash" } }
+      }));
+    });
+    $("summary").innerHTML = "";
+    renderLegend();
+  }
+
+  // Exclusion toggles
+  const exWrap = $("exclusions");
+  CONFIG.exclusions.forEach((ex) => {
+    const lab = document.createElement("label");
+    lab.className = "row";
+    lab.innerHTML = `<input type="checkbox" disabled ${ex.startOn ? "checked" : ""}> ${ex.label}`;
+    const box = lab.querySelector("input");
+    box.addEventListener("change", () => {
+      box.checked ? excluded.add(ex.id) : excluded.delete(ex.id);
+      if (countyWM) rebuildArea();
+    });
+    exWrap.appendChild(lab);
+    if (ex.startOn) excluded.add(ex.id);
+    ex._box = box;
+  });
+
+  updateVisibility();
+  const countyReady = loadPolygon(CONFIG.boundary);
+  CONFIG.exclusions.forEach((ex) => {
+    loadPolygon(ex).then(async (poly) => {
+      exclusionGeoms[ex.id] = poly;
+      ex._box.disabled = false;
+      await countyReady.catch(() => {});
+      if (countyWM && excluded.has(ex.id)) rebuildArea();
+    }).catch((err) => {
+      console.error(err);
+      ex._box.parentElement.title = "Couldn't load this boundary: " + err.message;
+      ex._box.parentElement.style.opacity = 0.5;
+    });
+  });
+
+  countyReady.then((poly) => {
+    countyWM = poly;
+    rebuildArea();
+    hazardGroup.visible = true;
+    $("exportBtn").disabled = false;
+    setStatus("");
+    view.goTo(poly.extent.clone().expand(1.08)).catch(() => {});
+  }).catch((err) => {
+    console.error(err);
+    setStatus("Couldn't load the county boundary. Try reloading, or set CONFIG.boundary.geojsonUrl " +
+              "to a boundary file in this repo. (" + err.message + ")", true);
+  });
+
+  /* ---------- Export: query → clip to county → GeoJSON download ---------- */
+  $("exportBtn").addEventListener("click", () => exportScenario(active));
+
+  async function exportScenario(sc) {
+    const btn = $("exportBtn");
+    btn.disabled = true;
+    $("summary").innerHTML = "";
+    try {
+      // A slightly enlarged, simplified county shape keeps the request small
+      // while still catching every feature that touches the real boundary.
+      const searchArea = geometryEngine.generalize(
+        geometryEngine.buffer(areaWM, 300, "meters"), 100, true, "meters");
+      const clipArea = areaWM;   // freeze the current toggles for this export
+      const exParts = CONFIG.exclusions.filter((ex) => excluded.has(ex.id) && exclusionGeoms[ex.id]);
+      const suffix = exParts.map((ex) => "_" + ex.file).join("");
+      const exNote = exParts.length ? " excluding " + exParts.map((ex) => ex.label.replace(/^Clip out /, "")).join(", ") : "";
+      const where = $("showBay").checked ? "1=1" : BAY_EXPR;
+      const url = `${CONFIG.serviceUrl}/${sc.id}`;
+
+      const features = [];
+      let start = 0;
+      while (true) {
+        setStatus(`Downloading features from BCDC… (${features.length} so far)`);
+        const fs = await query.executeQueryJSON(url, {
+          where,
+          geometry: searchArea,
+          spatialRelationship: "intersects",
+          outFields: ["Hazard_Type"],
+          returnGeometry: true,
+          returnZ: false,
+          returnM: false,
+          outSpatialReference: { wkid: 102100 },
+          start,
+          num: 1000
+        });
+        features.push(...fs.features);
+        if (!fs.exceededTransferLimit || fs.features.length === 0) break;
+        start += fs.features.length;
+      }
+
+      const out = [];
+      const acresByType = {};
+      for (let i = 0; i < features.length; i++) {
+        setStatus(`Clipping to San Mateo… ${i + 1} of ${features.length}`);
+        await new Promise((r) => setTimeout(r, 0));   // keep the page responsive
+        const f = features[i];
+        const clipped = geometryEngine.intersect(f.geometry, clipArea);
+        if (!clipped || !clipped.rings || clipped.rings.length === 0) continue;
+        const acres = geometryEngine.geodesicArea(clipped, "acres");
+        const type = f.attributes.Hazard_Type;
+        acresByType[type] = (acresByType[type] || 0) + acres;
+        out.push({
+          type: "Feature",
+          properties: {
+            Hazard_Type: type,
+            Scenario: `${sc.label} (${sc.sub})`,
+            Area: "San Mateo County" + exNote,
+            Acres_in_San_Mateo: Math.round(acres * 100) / 100
+          },
+          geometry: toGeoJSON(webMercatorUtils.webMercatorToGeographic(clipped))
+        });
+      }
+
+      const fc = {
+        type: "FeatureCollection",
+        name: `san_mateo_rsap_${sc.file}${suffix}`,
+        features: out
+      };
+      const blob = new Blob([JSON.stringify(fc)], { type: "application/geo+json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `san_mateo_rsap_${sc.file}${suffix}.geojson`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+
+      renderSummary(sc, acresByType, exNote);
+      setStatus(`Downloaded ${out.length} clipped features (WGS84).`);
+    } catch (err) {
+      console.error(err);
+      setStatus("Export failed: " + err.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function renderSummary(sc, acresByType, exNote) {
+    const rows = Object.entries(acresByType).sort((a, b) => b[1] - a[1]);
+    const fmt = (n) => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    $("summary").innerHTML =
+      (exNote ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">San Mateo County${esc(exNote)}</div>` : "") +
+      `<table><tr><th>${esc(sc.label)} hazard type</th><th class="num">Acres</th></tr>` +
+      rows.map(([t, v]) => `<tr><td>${esc(t)}</td><td class="num">${fmt(v)}</td></tr>`).join("") +
+      `</table>`;
+  }
+
+  /* Esri polygon (outer rings clockwise, holes counter-clockwise) → GeoJSON */
+  function toGeoJSON(poly) {
+    const signed = (r) => { let s = 0; for (let i = 0; i < r.length - 1; i++) s += (r[i + 1][0] - r[i][0]) * (r[i + 1][1] + r[i][1]); return s; };
+    const inside = (pt, ring) => {
+      let c = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i], [xj, yj] = ring[j];
+        if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) c = !c;
+      }
+      return c;
+    };
+    const round = (r) => r.map((p) => [Math.round(p[0] * 1e7) / 1e7, Math.round(p[1] * 1e7) / 1e7]);
+    const outers = [], holes = [];
+    poly.rings.forEach((r) => (signed(r) > 0 ? outers : holes).push(round(r)));
+    const polys = outers.map((o) => [o.slice().reverse()]);          // GeoJSON outer = CCW
+    holes.forEach((h) => {
+      const k = outers.findIndex((o) => inside(h[0], o));
+      if (k >= 0) polys[k].push(h.slice().reverse());                 // GeoJSON hole = CW
+      else polys.push([h]);                                           // orphan ring (already CCW): keep as its own polygon
+    });
+    return polys.length === 1 ? { type: "Polygon", coordinates: polys[0] }
+                              : { type: "MultiPolygon", coordinates: polys };
+  }
+});
 </script>
 </body>
 </html>
