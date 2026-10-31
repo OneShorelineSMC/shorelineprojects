@@ -15,6 +15,9 @@ A one-page web map of coastal flood hazards and adaptation projects in San Mateo
 - 100-year (1% annual chance) and 500-year (0.2% annual chance) floodplains.
 - "Land only" option (on by default) hides FEMA zones over the Bay, using BCDC's "Existing Bay" polygon as the shoreline.
 
+**Water features (San Mateo County GIS, live)**
+- Creeks from the county's Natural Features > Streams layer, with a "Named creeks only" option. Creek names label the lines as you zoom in.
+
 **Regional priorities (BCDC RSAP Strategic Regional Priorities, live)**
 - Transportation and transit: airports, ferry terminals, freight and passenger rail, highways, seaports, and Bay Plan priority use areas.
 - Critical infrastructure: wastewater facilities, power plants, healthcare facilities, emergency operations centers, and the Water-Related Industry priority use area.
@@ -83,6 +86,7 @@ The site is published from the `main` branch, root folder (Settings → Pages). 
 - FEMA National Flood Hazard Layer (effective FIRM)
 - SFEI EcoAtlas, California Habitat Projects (download of October 29, 2026)
 - OneShoreline ArcGIS Online layer
+- San Mateo County GIS, Natural Features: Streams
 - U.S. Census TIGERweb (county and city boundaries); Caltrans airports (SFO footprint)
 - Esri basemaps (Light Gray Canvas, World Hillshade, World Imagery)
 

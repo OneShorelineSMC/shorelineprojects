@@ -126,6 +126,11 @@
     <label class="row"><input id="femaLandOnly" type="checkbox" checked> Land only (hide FEMA zones over the Bay)</label>
     <p class="hint">Current FEMA maps, not sea level rise scenarios. FEMA's server can be slow, so give these a few seconds to draw.</p>
 
+    <h2>Water features</h2>
+    <label class="row"><input id="creeksOn" type="checkbox"> Creeks (San Mateo County)</label>
+    <label class="row" style="margin-left:24px;font-size:13px"><input id="creeksNamed" type="checkbox"> Named creeks only</label>
+    <p class="hint">Creek names appear as you zoom in.</p>
+
     <h2>Regional priorities (BCDC RSAP)</h2>
     <div id="infraControls" class="infra"></div>
 
@@ -157,7 +162,7 @@
 
     <p class="note">
       Data: <a href="https://services2.arcgis.com/4Z9x989NrBVrvFwm/arcgis/rest/services/RSAP_Coastal_Flood_Hazards/FeatureServer" target="_blank" rel="noopener">BCDC RSAP Coastal Flood Hazards</a>
-      (BCDC, USGS CoSMoS, ART). FEMA National Flood Hazard Layer. Transportation and critical infrastructure: BCDC RSAP Strategic Regional Priorities. County boundary: U.S. Census TIGERweb.
+      (BCDC, USGS CoSMoS, ART). FEMA National Flood Hazard Layer. Transportation and critical infrastructure: BCDC RSAP Strategic Regional Priorities. Creeks: San Mateo County GIS (Natural Features, Streams). County boundary: U.S. Census TIGERweb.
       Layers are clipped on the fly in your browser; the source data is not modified. City limits: U.S. Census TIGERweb.
       Projects: SFEI EcoAtlas, California Habitat Projects (downloaded Oct 29, 2026).
       Planning-level data, not for project design.
@@ -259,6 +264,12 @@ const CONFIG = {
   ],
   lineThinning: 0.6,   // "thin" layers draw at this fraction of BCDC's line width
   // SFEI EcoAtlas habitat projects in San Mateo County. This file sits next to index.html in the repo.
+  // San Mateo County GIS, Natural Features > Streams (public)
+  creeks: {
+    url: "https://gis.smcgov.org/maps/rest/services/FeatureServices/Natural_Features/FeatureServer/0",
+    color: [30, 120, 200],
+    labelScale: 36000          // creek names show when zoomed in past about 1:36,000
+  },
   projects: {
     url: "ecoatlas_san_mateo.geojson",
     version: "2026-10-31",          // change this whenever you upload a new project file, so browsers fetch the fresh copy
@@ -435,6 +446,38 @@ require([
   });
   // Erases FEMA zones over open water, using BCDC's "Existing Bay" polygon from the hazard layers
   const femaWaterMask = new GraphicsLayer({ blendMode: "destination-out", listMode: "hide", legendEnabled: false });
+  /* ---------- Creeks (San Mateo County GIS) ---------- */
+  const NAMED_EXPR = "NAME IS NOT NULL AND NAME <> ''";
+  const creekColor = CONFIG.creeks.color;
+  const creeksLayer = new FeatureLayer({
+    url: CONFIG.creeks.url,
+    title: "Creeks",
+    visible: false,
+    outFields: ["NAME"],
+    renderer: { type: "simple", symbol: { type: "simple-line", color: [...creekColor, 0.9], width: 1.3 } },
+    labelingInfo: [{
+      labelExpressionInfo: { expression: "$feature.NAME" },
+      where: NAMED_EXPR,
+      labelPlacement: "center-along",
+      maxScale: 0,
+      minScale: CONFIG.creeks.labelScale,
+      symbol: { type: "text", color: [20, 80, 140, 1], haloColor: [255, 255, 255, 0.9], haloSize: 1.2,
+                font: { size: 9, style: "italic", family: "Arial" } }
+    }],
+    popupTemplate: {
+      title: "{expression/name}",
+      expressionInfos: [{ name: "name", expression: "IIf(IsEmpty($feature.NAME), 'Unnamed creek', $feature.NAME)" }],
+      content: "<span style='color:#666'>San Mateo County GIS, Natural Features (Streams).</span>"
+    }
+  });
+  creeksLayer.load().catch((err) => {
+    console.error(err);
+    const box = $("creeksOn");
+    box.disabled = true;
+    box.parentElement.style.opacity = 0.5;
+    box.parentElement.title = "Couldn't load the county creeks layer: " + err.message;
+  });
+
   /* ---------- EcoAtlas projects ---------- */
   const projSymbol = (rgb) => ({ type: "simple-fill", color: [...rgb, 0.22], outline: { color: [...rgb, 1], width: 1.6 } });
   const projLayer = new GeoJSONLayer({
@@ -599,7 +642,7 @@ require([
   const maskLayer = new GraphicsLayer({ blendMode: "destination-in", listMode: "hide", legendEnabled: false });
   const hazardGroup = new GroupLayer({
     title: "Coastal flood hazards",
-    layers: [...hazardLayers, femaGroup, projLayer, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
+    layers: [...hazardLayers, femaGroup, creeksLayer, projLayer, ...infraOrdered, maskLayer],   // last = top, so the mask sits above everything it clips
     visible: false                          // shown once the boundary has loaded
   });
   const outlineLayer = new GraphicsLayer({ listMode: "hide" });
@@ -656,6 +699,11 @@ require([
       if ($("femaLandOnly").checked) html += `<div class="lg-item" style="color:var(--muted)">Land only: zones over the Bay hidden.</div>`;
       if (view.scale > CONFIG.fema.minScale) html += `<div class="lg-item" style="color:var(--muted)">Zoom in to see FEMA zones.</div>`;
     }
+    if (creeksLayer.visible) {
+      html += `<h3>Water features</h3>` + item(`<span class="lg-prev"><svg width="22" height="14"><path d="M2 9 C7 3, 11 13, 20 5" ` +
+        `fill="none" stroke="${rgba(creekColor, 0.9)}" stroke-width="1.8" stroke-linecap="round"/></svg></span>`,
+        $("creeksNamed").checked ? "Named creeks" : "Creeks");
+    }
     if (projLayer.visible) {
       html += `<h3>EcoAtlas projects</h3>` + Object.entries(CONFIG.projects.colors).map(([k, c]) =>
         item(`<span class="sw" style="background:${rgba(c, 0.22)};border:2px solid ${rgba(c, 1)}"></span>`, k)).join("");
@@ -666,7 +714,7 @@ require([
       if (!on.length) return;
       html += `<h3>${grp.title}</h3>` + on.map((x) => `<div class="lg-infra" data-key="${x.key}"></div>`).join("");
     });
-    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked && !infraOn.length && !projLayer.visible) html += `<div class="lg-item">No hazard layers switched on.</div>`;
+    if (!["combined", "gw", "tidal", "surge"].some(viewOn) && !$("fema100").checked && !$("fema500").checked && !infraOn.length && !projLayer.visible && !creeksLayer.visible) html += `<div class="lg-item">No hazard layers switched on.</div>`;
     html += `<h3>Boundaries</h3>`;
     if ($("showOutline").checked) html += item(`<span class="sw line"></span>`, "San Mateo County");
     if (excluded.size) html += item(`<span class="sw dash"></span>`, "Clipped-out area");
@@ -828,6 +876,12 @@ require([
     });
   }
   $("projOn").addEventListener("change", (e) => { projLayer.visible = e.target.checked; renderLegend(); });
+  $("creeksOn").addEventListener("change", (e) => { creeksLayer.visible = e.target.checked; renderLegend(); });
+  $("creeksNamed").addEventListener("change", (e) => {
+    creeksLayer.definitionExpression = e.target.checked ? NAMED_EXPR : null;
+    if (e.target.checked && !$("creeksOn").checked) { $("creeksOn").checked = true; creeksLayer.visible = true; }
+    renderLegend();
+  });
 
   // A collapsible group with its own Show all / Hide all
   function makeGroup(title, projects, level, dotColor) {
