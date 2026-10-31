@@ -249,6 +249,7 @@ const CONFIG = {
   // SFEI EcoAtlas habitat projects in San Mateo County. This file sits next to index.html in the repo.
   projects: {
     url: "ecoatlas_san_mateo.geojson",
+    version: "2026-10-31",          // change this whenever you upload a new project file, so browsers fetch the fresh copy
     hideStatuses: ["Completed"],   // statuses left off the list and map; use [] to show everything
     colors: { Bayside: [126, 87, 194], Coastside: [199, 61, 141] }   // violet and magenta
   },
@@ -417,7 +418,7 @@ require([
   /* ---------- EcoAtlas projects ---------- */
   const projSymbol = (rgb) => ({ type: "simple-fill", color: [...rgb, 0.22], outline: { color: [...rgb, 1], width: 1.6 } });
   const projLayer = new GeoJSONLayer({
-    url: CONFIG.projects.url,
+    url: `${CONFIG.projects.url}?v=${encodeURIComponent(CONFIG.projects.version || "")}`,
     title: "EcoAtlas projects",
     visible: false,
     definitionExpression: "1=0",   // nothing drawn until the project list has loaded and applied its filter
@@ -861,7 +862,7 @@ require([
       const a = f.attributes;
       if (hidden.has(a.Status)) return;
       if (!byId[a.projectid]) byId[a.projectid] = { id: a.projectid, name: a.Project, status: a.Status,
-        region: a.Region, own: a.Ownership, os: a.OneShoreline };
+        region: a.Region || "Unassigned", own: a.Ownership || "Untagged", os: a.OneShoreline || "Untagged" };
       const ext = f.geometry && f.geometry.extent;
       if (ext) projExtents[a.projectid] = projExtents[a.projectid] ? projExtents[a.projectid].clone().union(ext) : ext.clone();
     });
@@ -876,15 +877,15 @@ require([
       note.textContent = `${projects.length} active projects shown (${[...hidden].join(", ").toLowerCase()} projects are hidden).`;
       wrap.appendChild(note);
     }
-    ["Coastside", "Bayside"].forEach((region) => {
+    ["Coastside", "Bayside", "Unassigned"].forEach((region) => {
       const inRegion = projects.filter((pr) => pr.region === region);
       if (!inRegion.length) return;
       const regionGrp = makeGroup(region, inRegion, 1, CONFIG.projects.colors[region]);
-      ["Public", "Private"].forEach((own) => {
+      ["Public", "Private", "Untagged"].forEach((own) => {
         const inOwn = inRegion.filter((pr) => pr.own === own);
         if (!inOwn.length) return;
         const ownGrp = makeGroup(own, inOwn, 2);
-        ["OneShoreline-related", "Not OneShoreline"].forEach((os) => {
+        ["OneShoreline-related", "Not OneShoreline", "Untagged"].forEach((os) => {
           const inOs = inOwn.filter((pr) => pr.os === os);
           if (!inOs.length) return;
           const osGrp = makeGroup(os, inOs, 3);
