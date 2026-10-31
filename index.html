@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>San Mateo Coastal Flood Hazards</title>
+  <title>OneShoreline Flood Adaptation Viewer (Beta)</title>
   <link rel="stylesheet" href="https://js.arcgis.com/4.33/esri/themes/light/main.css">
   <script src="https://js.arcgis.com/4.33/"></script>
   <style>
@@ -22,7 +22,16 @@
     #panel { width: 340px; flex: none; overflow-y: auto; background: var(--panel);
       border-right: 1px solid var(--line); padding: 16px; }
     #viewDiv { flex: 1; min-width: 0; }
-    h1 { font-size: 18px; margin: 0 0 2px; }
+    h1 { font-size: 18px; line-height: 1.3; margin: 0 0 4px; }
+    .beta { display: inline-block; vertical-align: 2px; margin-left: 4px; padding: 1px 8px; border-radius: 999px;
+      background: #fff4d6; color: #7a5200; border: 1px solid #e8c56a; font-size: 11px; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase; }
+    #mapLegend .lg-foot { padding: 8px 10px 10px; border-top: 1px solid var(--line); color: var(--muted);
+      font-size: 11px; line-height: 1.4; }
+    #mapLegend .lg-foot p { margin: 0 0 6px; }
+    #mapLegend .lg-foot p:last-child { margin: 0; }
+    #mapLegend .lg-foot a { color: var(--accent); }
+    #mapLegend.collapsed .lg-foot { display: none; }
     .sub { color: var(--muted); margin: 0 0 14px; }
     h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
       margin: 18px 0 8px; }
@@ -98,8 +107,8 @@
 <body>
 <div id="app">
   <aside id="panel">
-    <h1>San Mateo County</h1>
-    <p class="sub">Coastal flood hazards (BCDC RSAP, 2024 SLR guidance)</p>
+    <h1>OneShoreline Flood Adaptation Viewer <span class="beta">Beta</span></h1>
+    <p class="sub">San Mateo County coastal flood hazards and adaptation projects</p>
 
     <h2>Sea level rise scenario</h2>
     <div id="scenarios"></div>
@@ -598,7 +607,16 @@ require([
   const legendEl = document.createElement("div");
   legendEl.id = "mapLegend";
   legendEl.innerHTML = `<button class="lg-head" type="button" aria-expanded="true">Legend <span>▾</span></button>
-                        <div class="lg-body"></div>`;
+                        <div class="lg-body"></div>
+                        <div class="lg-foot">
+                          <p><strong>Beta: for exploration only.</strong> This viewer brings together regionally published
+                          data (BCDC, FEMA, USGS CoSMoS, SFEI EcoAtlas and others) in one place so users can explore data
+                          coverage and quality to support adaptation planning.</p>
+                          <p>It is not an official flood map and does not replace the source data or site-specific analysis.
+                          Data are shown as published by each source and may be incomplete, out of date or inconsistent.
+                          Do not use it for project design, regulatory, insurance or property decisions.</p>
+                          <p>Questions or corrections: <a href="mailto:info@oneshoreline.org">info@oneshoreline.org</a></p>
+                        </div>`;
   legendEl.querySelector(".lg-head").addEventListener("click", () => {
     const c = legendEl.classList.toggle("collapsed");
     legendEl.querySelector(".lg-head").setAttribute("aria-expanded", String(!c));
