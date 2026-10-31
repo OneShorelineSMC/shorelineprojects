@@ -53,6 +53,10 @@
     details.region > summary { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
     details.region > summary .count { color: var(--muted); font-weight: 400; }
     .region-tools { font-size: 12px; margin: 4px 0 2px 18px; }
+    details.lvl2, details.lvl3 { margin: 6px 0 0 16px; }
+    details.lvl2 > summary { font-size: 12.5px; }
+    details.lvl3 > summary { font-size: 12px; font-weight: 500; }
+    details.lvl3 .proj-list label.row { margin-left: 18px; }
     .region-tools a { color: var(--accent); cursor: pointer; margin-right: 12px; }
     .proj-list label.row { font-size: 12.5px; margin: 4px 0 4px 18px; align-items: flex-start; line-height: 1.3; }
     .proj-list input { margin-top: 2px; flex: none; }
@@ -129,7 +133,8 @@
       <summary><span class="caret">▸</span> EcoAtlas projects</summary>
       <label class="row" style="margin-top:8px"><input id="projOn" type="checkbox"> Show projects on map</label>
       <p class="hint" style="margin-left:0">San Mateo County projects from SFEI EcoAtlas (California Habitat Projects).
-        Uncheck any project to hide it. Click a project on the map for its details; ⌖ zooms to it.</p>
+        Grouped by Coastside/Bayside, then public/private, then OneShoreline. Uncheck any project to hide it;
+        click one on the map for details, or use ⌖ to zoom to it.</p>
       <div id="projGroups"><p class="hint" style="margin-left:0">Loading projects…</p></div>
     </details>
 
@@ -244,6 +249,7 @@ const CONFIG = {
   // SFEI EcoAtlas habitat projects in San Mateo County. This file sits next to index.html in the repo.
   projects: {
     url: "ecoatlas_san_mateo.geojson",
+    hideStatuses: ["Completed"],   // statuses left off the list and map; use [] to show everything
     colors: { Bayside: [126, 87, 194], Coastside: [199, 61, 141] }   // violet and magenta
   },
   basemap: "gray-vector",
@@ -414,12 +420,13 @@ require([
     url: CONFIG.projects.url,
     title: "EcoAtlas projects",
     visible: false,
+    definitionExpression: "1=0",   // nothing drawn until the project list has loaded and applied its filter
     outFields: ["*"],
     objectIdField: "OID",
     fields: [
       { name: "OID", type: "oid" },
       { name: "projectid", type: "integer", alias: "EcoAtlas ID" },
-      ...["Project", "Cost", "Status", "Region", "Project_type", "Site", "Site_status", "Habitat", "Benefits",
+      ...["Project", "Cost", "Status", "Region", "Ownership", "OneShoreline", "Project_type", "Site", "Site_status", "Habitat", "Benefits",
           "Organization", "Contacts", "Group", "EcoAtlas_link"].map((n) => ({ name: n, type: "string" })),
       { name: "Sites_in_San_Mateo", type: "integer" },
       { name: "Total_sites", type: "integer" }
@@ -438,6 +445,8 @@ require([
             { fieldName: "Cost",               label: "Cost" },
             { fieldName: "Status",             label: "Project status" },
             { fieldName: "Region",             label: "Region" },
+            { fieldName: "Ownership",          label: "Public / private" },
+            { fieldName: "OneShoreline",       label: "OneShoreline" },
             { fieldName: "Project_type",       label: "Project type" },
             { fieldName: "Site",               label: "Site" },
             { fieldName: "Site_status",        label: "Site status" },
@@ -773,7 +782,7 @@ require([
 
   view.watch("scale", () => { if ($("fema100").checked || $("fema500").checked) renderLegend(); });
 
-  /* ---------- EcoAtlas project list (grouped Coastside / Bayside) ---------- */
+  /* ---------- EcoAtlas project list: Region > Public/Private > OneShoreline ---------- */
   const projOnIds = new Set();      // projects currently switched on
   const projExtents = {};           // projectid -> extent, for zooming
   const projBoxes = {};             // projectid -> checkbox
@@ -781,78 +790,115 @@ require([
   function applyProjFilter() {
     const ids = [...projOnIds];
     projLayer.definitionExpression = ids.length ? `projectid IN (${ids.join(",")})` : "1=0";
+    // keep every group's "x of y shown" count current
+    document.querySelectorAll("#projGroups details[data-ids]").forEach((d) => {
+      const ids = d.dataset.ids.split(",").map(Number);
+      const on = ids.filter((id) => projOnIds.has(id)).length;
+      d.querySelector(":scope > summary .count").textContent = on === ids.length ? `(${ids.length})` : `(${on} of ${ids.length})`;
+    });
   }
   $("projOn").addEventListener("change", (e) => { projLayer.visible = e.target.checked; renderLegend(); });
 
+  // A collapsible group with its own Show all / Hide all
+  function makeGroup(title, projects, level, dotColor) {
+    const det = document.createElement("details");
+    det.className = "region lvl" + level;
+    det.dataset.ids = projects.map((pr) => pr.id).join(",");
+    const dot = dotColor ? `<span class="rdot" style="background:rgba(${dotColor[0]},${dotColor[1]},${dotColor[2]},.9)"></span>` : "";
+    det.innerHTML = `<summary><span class="caret">▸</span>${dot}<span>${title}</span> <span class="count">(${projects.length})</span></summary>` +
+      `<div class="region-tools"><a role="button" tabindex="0" data-all="1">Show all</a><a role="button" tabindex="0" data-all="0">Hide all</a></div>` +
+      `<div class="grp-body"></div>`;
+    det.querySelectorAll(":scope > .region-tools a").forEach((link) => {
+      const go = () => {
+        const on = link.dataset.all === "1";
+        projects.forEach((pr) => { projBoxes[pr.id].checked = on; on ? projOnIds.add(pr.id) : projOnIds.delete(pr.id); });
+        applyProjFilter();
+      };
+      link.addEventListener("click", go);
+      link.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+    });
+    return det;
+  }
+
+  function makeProjectRow(pr) {
+    const lab = document.createElement("label");
+    lab.className = "row";
+    const box = document.createElement("input");
+    box.type = "checkbox"; box.checked = true;
+    const nm = document.createElement("span");
+    nm.className = "nm";
+    nm.textContent = pr.name;
+    const st = document.createElement("span");
+    st.className = "st"; st.textContent = pr.status || "";
+    nm.appendChild(st);
+    const zoom = document.createElement("button");
+    zoom.className = "zoom"; zoom.type = "button"; zoom.textContent = "⌖";
+    zoom.title = "Zoom to this project";
+    zoom.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (!box.checked) { box.checked = true; box.dispatchEvent(new Event("change")); }
+      if (!$("projOn").checked) { $("projOn").checked = true; $("projOn").dispatchEvent(new Event("change")); }
+      const ext = projExtents[pr.id];
+      if (ext) view.goTo(ext.clone().expand(1.6)).catch(() => {});
+    });
+    box.addEventListener("change", () => {
+      box.checked ? projOnIds.add(pr.id) : projOnIds.delete(pr.id);
+      applyProjFilter();
+    });
+    projBoxes[pr.id] = box;
+    lab.append(box, nm, zoom);
+    return lab;
+  }
+
   projLayer.load().then(() => projLayer.queryFeatures({
     where: "1=1",
-    outFields: ["projectid", "Project", "Status", "Region"],
+    outFields: ["projectid", "Project", "Status", "Region", "Ownership", "OneShoreline"],
     returnGeometry: true
   })).then((fs) => {
+    const hidden = new Set(CONFIG.projects.hideStatuses || []);
     const byId = {};
     fs.features.forEach((f) => {
       const a = f.attributes;
-      if (!byId[a.projectid]) byId[a.projectid] = { id: a.projectid, name: a.Project, status: a.Status, region: a.Region };
+      if (hidden.has(a.Status)) return;
+      if (!byId[a.projectid]) byId[a.projectid] = { id: a.projectid, name: a.Project, status: a.Status,
+        region: a.Region, own: a.Ownership, os: a.OneShoreline };
       const ext = f.geometry && f.geometry.extent;
       if (ext) projExtents[a.projectid] = projExtents[a.projectid] ? projExtents[a.projectid].clone().union(ext) : ext.clone();
     });
     const projects = Object.values(byId).sort((x, y) => x.name.localeCompare(y.name));
     projects.forEach((pr) => projOnIds.add(pr.id));
-    applyProjFilter();
 
     const wrap = $("projGroups");
     wrap.innerHTML = "";
+    if (hidden.size) {
+      const note = document.createElement("p");
+      note.className = "hint"; note.style.marginLeft = "0";
+      note.textContent = `${projects.length} active projects shown (${[...hidden].join(", ").toLowerCase()} projects are hidden).`;
+      wrap.appendChild(note);
+    }
     ["Coastside", "Bayside"].forEach((region) => {
-      const list = projects.filter((pr) => pr.region === region);
-      if (!list.length) return;
-      const c = CONFIG.projects.colors[region] || [120, 120, 120];
-      const det = document.createElement("details");
-      det.className = "region";
-      det.innerHTML = `<summary><span class="caret">▸</span><span class="rdot" style="background:rgba(${c[0]},${c[1]},${c[2]},.9)"></span>` +
-                      `${region} <span class="count">(${list.length})</span></summary>` +
-                      `<div class="region-tools"><a role="button" tabindex="0" data-all="1">Show all</a>` +
-                      `<a role="button" tabindex="0" data-all="0">Hide all</a></div><div class="proj-list"></div>`;
-      const listEl = det.querySelector(".proj-list");
-      list.forEach((pr) => {
-        const lab = document.createElement("label");
-        lab.className = "row";
-        const box = document.createElement("input");
-        box.type = "checkbox"; box.checked = true;
-        const nm = document.createElement("span");
-        nm.className = "nm";
-        nm.textContent = pr.name;
-        const st = document.createElement("span");
-        st.className = "st"; st.textContent = pr.status || "";
-        nm.appendChild(st);
-        const zoom = document.createElement("button");
-        zoom.className = "zoom"; zoom.type = "button"; zoom.textContent = "⌖";
-        zoom.title = "Zoom to this project";
-        zoom.addEventListener("click", (e) => {
-          e.preventDefault(); e.stopPropagation();
-          if (!box.checked) { box.checked = true; box.dispatchEvent(new Event("change")); }
-          if (!$("projOn").checked) { $("projOn").checked = true; $("projOn").dispatchEvent(new Event("change")); }
-          const ext = projExtents[pr.id];
-          if (ext) view.goTo(ext.clone().expand(1.6)).catch(() => {});
+      const inRegion = projects.filter((pr) => pr.region === region);
+      if (!inRegion.length) return;
+      const regionGrp = makeGroup(region, inRegion, 1, CONFIG.projects.colors[region]);
+      ["Public", "Private"].forEach((own) => {
+        const inOwn = inRegion.filter((pr) => pr.own === own);
+        if (!inOwn.length) return;
+        const ownGrp = makeGroup(own, inOwn, 2);
+        ["OneShoreline-related", "Not OneShoreline"].forEach((os) => {
+          const inOs = inOwn.filter((pr) => pr.os === os);
+          if (!inOs.length) return;
+          const osGrp = makeGroup(os, inOs, 3);
+          const list = document.createElement("div");
+          list.className = "proj-list";
+          inOs.forEach((pr) => list.appendChild(makeProjectRow(pr)));
+          osGrp.querySelector(".grp-body").appendChild(list);
+          ownGrp.querySelector(".grp-body").appendChild(osGrp);
         });
-        box.addEventListener("change", () => {
-          box.checked ? projOnIds.add(pr.id) : projOnIds.delete(pr.id);
-          applyProjFilter();
-        });
-        projBoxes[pr.id] = box;
-        lab.append(box, nm, zoom);
-        listEl.appendChild(lab);
+        regionGrp.querySelector(".grp-body").appendChild(ownGrp);
       });
-      det.querySelectorAll(".region-tools a").forEach((link) => {
-        const go = () => {
-          const on = link.dataset.all === "1";
-          list.forEach((pr) => { projBoxes[pr.id].checked = on; on ? projOnIds.add(pr.id) : projOnIds.delete(pr.id); });
-          applyProjFilter();
-        };
-        link.addEventListener("click", go);
-        link.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
-      });
-      wrap.appendChild(det);
+      wrap.appendChild(regionGrp);
     });
+    applyProjFilter();
   }).catch((err) => {
     console.error(err);
     $("projGroups").innerHTML = `<p class="hint" style="margin-left:0;color:#a33">Couldn't load the project file ` +
