@@ -69,12 +69,21 @@ Each project is assigned by which side of the Skyline ridge (the Bay–Pacific d
 3. Replace `ecoatlas_san_mateo.geojson` in the repo.
 4. In `index.html`, change `version:` in the `projects` settings to the new date, so browsers download the new file instead of reusing an old copy.
 
+## Project review page (`review.html`)
+A page for reviewing and filling in EcoAtlas details for the 20 Bayside OneShoreline-related projects (linked from the map's EcoAtlas section).
+- Pick a project on the left. Blank key fields are highlighted, and the yellow summary at the top links to each one. "Open in EcoAtlas" opens the project's EcoAtlas page so you can copy in what's missing.
+- Edit any field or table row (sites, habitat plan, funding, contacts, events and so on), add or delete rows, and tick **Mark as reviewed**. Filters show projects that need data, aren't reviewed yet, or that you've edited.
+- Edits save automatically **in your browser only**. To publish them, click **Download data file** and upload the downloaded `review_data.json` to the repo, replacing the old one. **Download Excel** gives the same data in the EcoAtlas template layout. **Import file** loads a data file someone else edited.
+- Projects marked "Source: EcoAtlas download" came from the Oct 29 shapefile because their EcoAtlas pages couldn't be read automatically, so they have more blanks to fill.
+
 ## Files in this repo
 | File | What it is |
 |---|---|
 | `index.html` | The whole viewer. Adjustable settings are in the `CONFIG` block near the top of the script. |
 | `ecoatlas_san_mateo.geojson` | San Mateo EcoAtlas project boundaries with Region, Public/Private and OneShoreline tags. |
 | `ecoatlas_project_tags.csv` | Record of the preliminary tags for all 123 projects (optional; the viewer doesn't read it). |
+| `review.html` | Project review and data-entry page. |
+| `review_data.json` | Data for the review page: the 20 Bayside OneShoreline-related projects with EcoAtlas fields, tags and costs. |
 | `README.md` | This file. |
 
 ## Publishing with GitHub Pages

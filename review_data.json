@@ -1,0 +1,2048 @@
+{
+ "title": "OneShoreline-related Bayside projects (EcoAtlas)",
+ "version": 1,
+ "updated": "2026-11-05",
+ "note": "EcoAtlas fields from EcoAtlas project pages (Nov 5, 2026) or the EcoAtlas download (Oct 29, 2026). Region, Public/Private and OneShoreline tags are OneShoreline preliminary staff tagging. Costs from OneShoreline's search of published sources.",
+ "projects": [
+  {
+   "id": 12465,
+   "name": "Brisbane Area Shoreline Resilience Project",
+   "url": "https://www.ecoatlas.org/regions/adminregion/sfbjv/projects/12465",
+   "status": "Proposed",
+   "county": "San Mateo",
+   "type": "Unknown/Unspecified",
+   "acres": 50,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Joint Venture",
+   "abstract": null,
+   "lat": 37.67872,
+   "lon": -122.38765,
+   "last_updated": "2026-07-16",
+   "funding_need": 277000,
+   "design_year": 2100,
+   "slr_ft": 3.5,
+   "storm_event": "100-year extreme water level",
+   "adaptation_type": "Hybrid",
+   "gw_adaptable": "Not Applicable/Unknown/Unspecified",
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$750,000",
+   "cost_basis": "Ocean Protection Council SB 1 grant for the Brisbane Shoreline Resilience Plan (planning only)",
+   "cost_source": "OneShoreline, Brisbane Shoreline Resilience Plan project sheet (Dec 2025) https://oneshoreline.org/wp-content/uploads/2025/12/FINAL-Brisbane-Shoreline-Resilience-Plan.pdf",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026. Abstract not copied; see the EcoAtlas URL.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Ecotone levee along 101",
+     "status": "Proposed",
+     "acres": 50
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Ecotone levee along 101",
+     "phase": "Conceptual design",
+     "activity": "Restoration/Re-establishment",
+     "subactivities": "Wildlife-specific Measures",
+     "habitat": "Subtidal Habitat",
+     "subhabitat": "Shellfish beds",
+     "acres": 50,
+     "activity_status": "Planning in-progress",
+     "water_regime": "Fully tidal"
+    },
+    {
+     "site_name": "Ecotone levee along 101",
+     "phase": "Preliminary design",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Ecotone Levees",
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": "Proposed",
+     "water_regime": null
+    }
+   ],
+   "funding": [
+    {
+     "phase": "Conceptual design",
+     "activity": "Restoration/Re-establishment",
+     "funder": "SFBRA San Francisco Bay Restoration Authority - Measure AA",
+     "amount": 962500
+    },
+    {
+     "phase": "Preliminary design",
+     "activity": "Restoration/Rehabilitation",
+     "funder": "California Ocean Protection Council",
+     "amount": 750000
+    }
+   ],
+   "contacts": [
+    {
+     "type": "Agency Staff",
+     "name": "Summer Bundy",
+     "organization": "OneShoreline",
+     "department": "Not applicable/Unknown"
+    }
+   ],
+   "events": [
+    {
+     "date": "2025-01-01",
+     "event": "Project start date",
+     "description": "Anticipated project start date",
+     "site": null
+    }
+   ],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [
+    {
+     "category": "Engaging participation",
+     "tracking": "Quantitative metrics collected",
+     "units": null
+    }
+   ],
+   "cram": [
+    {
+     "visit_date": "2025-09-24",
+     "version": "6.1",
+     "site_name": "2025 WRMP Brisbane Lagoon 0133",
+     "wetland_type": "estuarine perennial saline",
+     "index_score": 57
+    }
+   ]
+  },
+  {
+   "id": 10686,
+   "name": "Colma Creek Adaptation",
+   "url": "https://www.ecoatlas.org/regions/adminregion/sfbjv/projects/10686",
+   "status": "Planning",
+   "county": "San Mateo",
+   "type": "Non-mitigation",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation; San Francisco Bay Joint Venture; San Francisco Bay Restoration Authority (Eligible); San Francisco Bay Restoration Authority (Funded)",
+   "admin_region": "San Francisco Bay Joint Venture",
+   "abstract": null,
+   "lat": 37.64618,
+   "lon": -122.39663,
+   "last_updated": "2026-07-16",
+   "funding_need": 14100000,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$595,000",
+   "cost_basis": "SF Bay Restoration Authority Measure AA grant to South San Francisco for technical studies, 35% design, outreach and permit plan (Grant Round 4, 2021; reported complete 2024)",
+   "cost_source": "SF Bay Restoration Authority, Colma Creek Restoration and Adaptation Project (Jun 2021) https://www.sfbayrestore.org/projects/colma-creek-restoration-and-adaptation-project",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026. Abstract not copied; see the EcoAtlas URL.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Colma Creek Adaptation",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Colma Creek Adaptation",
+     "phase": "Conceptual design",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Vegetation Management, Wildlife-specific Measures",
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": "Planning completed",
+     "water_regime": "Fully tidal"
+    }
+   ],
+   "funding": [
+    {
+     "phase": "Conceptual design",
+     "activity": "Restoration/Rehabilitation",
+     "funder": "SFBRA San Francisco Bay Restoration Authority - Measure AA",
+     "amount": 595000
+    }
+   ],
+   "contacts": [
+    {
+     "type": "Consultant",
+     "name": "Richard Mullane",
+     "organization": "City of South San Francisco",
+     "department": "Hassell - Design Principal"
+    },
+    {
+     "type": "Consultant",
+     "name": "Jessica Lock",
+     "organization": "Hassell",
+     "department": "Not applicable/Unknown"
+    }
+   ],
+   "events": [],
+   "project_ids": [
+    {
+     "id": "RA-028",
+     "type": "SFBRA - Project ID"
+    }
+   ],
+   "habitat_impacts": [],
+   "benefits": [
+    {
+     "category": "Access and recreation enhancement",
+     "tracking": "Qualitative assessment",
+     "units": null
+    },
+    {
+     "category": "Engaging participation",
+     "tracking": "Qualitative assessment",
+     "units": null
+    },
+    {
+     "category": "Engaging participation",
+     "tracking": "Quantitative metrics collected",
+     "units": "Count"
+    },
+    {
+     "category": "Flood risk and erosion reduction",
+     "tracking": "Qualitative assessment",
+     "units": null
+    },
+    {
+     "category": "Habitat restoration or protection",
+     "tracking": "Qualitative assessment",
+     "units": null
+    },
+    {
+     "category": "Water quality/flow improvement",
+     "tracking": "Qualitative assessment",
+     "units": null
+    }
+   ],
+   "cram": [
+    {
+     "visit_date": "2025-09-24",
+     "version": "6.1",
+     "site_name": "2025 WRMP Colma Creek 0129",
+     "wetland_type": "estuarine perennial saline",
+     "index_score": 49
+    }
+   ]
+  },
+  {
+   "id": 2098,
+   "name": "Colma Creek Flood Control Channel Wall Repair Project",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/2098",
+   "status": "Planning",
+   "county": null,
+   "type": "Compensatory mitigation",
+   "acres": null,
+   "groups": null,
+   "admin_region": "San Francisco Bay Regional Water Quality Control Board",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "No published cost",
+   "cost_basis": "2010 County project upstream of Spruce Ave; CEQA filing (SCH 2010092005) gives no cost",
+   "cost_source": "CEQAnet, SCH 2010092005 (Sep 2010) https://ceqanet.lci.ca.gov/2010092005",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Colma Creeek Flood Control Channel Wall Repair Project",
+     "status": "Construction planned",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Colma Creeek Flood Control Channel Wall Repair Project",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Unknown/unspecified habitat(s)",
+     "subhabitat": null,
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 11637,
+   "name": "Colma Creek Flood Control Maintenance Project",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/11637",
+   "status": "In-progress",
+   "county": null,
+   "type": "Repair/Maintenance",
+   "acres": null,
+   "groups": null,
+   "admin_region": "San Francisco Bay Regional Water Quality Control Board",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$730,000 / yr",
+   "cost_basis": "OneShoreline Colma Creek Flood Zone FY 2025–26 maintenance budget (ongoing program across 5.4 miles of channel)",
+   "cost_source": "OneShoreline, Colma Creek CAC meeting slides 2025-09-09 (Sep 2025) https://oneshoreline.org/wp-content/uploads/2025/12/CCCAC_Meeting_Slides_2025-09-09.pdf",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Reach 2",
+     "status": "In-progress/Implementation",
+     "acres": null
+    },
+    {
+     "site_name": "Reach 3",
+     "status": "In-progress/Implementation",
+     "acres": null
+    },
+    {
+     "site_name": "Reach 1",
+     "status": "In-progress/Implementation",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Reach 2",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Constructed Channel",
+     "subhabitat": "Canal",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    },
+    {
+     "site_name": "Reach 3",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Constructed Channel",
+     "subhabitat": "Canal",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [
+    {
+     "type": null,
+     "name": "Colin Martorana",
+     "organization": "OneShoreline",
+     "department": null
+    },
+    {
+     "type": null,
+     "name": "Julie Casagrande",
+     "organization": "San Mateo County",
+     "department": null
+    },
+    {
+     "type": null,
+     "name": "Robin Hunter",
+     "organization": "Montrose Environmental",
+     "department": null
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 1125,
+   "name": "Colma Creek Mitigation",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/1125",
+   "status": "Completed",
+   "county": null,
+   "type": "Compensatory mitigation",
+   "acres": null,
+   "groups": null,
+   "admin_region": "San Francisco Bay Regional Water Quality Control Board",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "No published cost",
+   "cost_basis": "City of South San Francisco BCDC permit mitigation; no cost found in staff reports or permits",
+   "cost_source": null,
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Colma Creek Mitigation - Site 2b",
+     "status": "Construction completed",
+     "acres": null
+    },
+    {
+     "site_name": "Colma Creek Mitigation - Sites 2a, 2c, 3",
+     "status": "Construction completed",
+     "acres": null
+    },
+    {
+     "site_name": "Colma Creek Mitigation - Enhancement",
+     "status": "Construction completed",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Colma Creek Mitigation - Site 2b",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    },
+    {
+     "site_name": "Colma Creek Mitigation - Sites 2a, 2c, 3",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    },
+    {
+     "site_name": "Colma Creek Mitigation - Enhancement",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [
+    {
+     "type": null,
+     "name": "Barbara Hawkins",
+     "organization": "City of South San Francisco",
+     "department": null
+    },
+    {
+     "type": null,
+     "name": "Leslie Lacko",
+     "organization": "BCDC - San Francisco Bay Conservation and Development Commission",
+     "department": null
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 12670,
+   "name": "Colma Creek Watershed Plan",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/12670",
+   "status": "Planning",
+   "county": null,
+   "type": "Unknown/Unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$974,825",
+   "cost_basis": "Not-to-exceed consultant agreement with Lotus Water Engineering to prepare the plan, plus $20,000 OneShoreline contingency (22-month schedule). Plan preparation only.",
+   "cost_source": "OneShoreline Board meeting presentation 4.28.25 (Apr 2025) https://oneshoreline.org/wp-content/uploads/2025/04/OneShoreline-Board-mtg.-presentation-4.28.25.pdf",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Colma Creek Watershed",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Colma Creek Watershed",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Modified Channel",
+     "subhabitat": "Substantially altered waterway, non-riparian",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [
+    {
+     "type": null,
+     "name": "Johnathan Perisho",
+     "organization": "OneShoreline",
+     "department": null
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 12294,
+   "name": "Dumbarton Bridge West Approach Sea Level Rise Project",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/12294",
+   "status": "Planning",
+   "county": null,
+   "type": "Unknown/Unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$200,000",
+   "cost_basis": "Caltrans SB 1 Adaptation Planning Grant FY 2017–18 (MTC with SFCJPA) for the East Palo Alto and Dumbarton Bridge Resilience Study (report 2020)",
+   "cost_source": "Caltrans FY 17-18 SB1 Adaptation Planning Award List (FY 2017–18) https://dot-drp.dot.ca.gov/-/media/dot-media/programs/transportation-planning/documents/sustainable-planning-grants-2021/81522-update/4-fy-17-18-sb1-adaptation-planning-award-list.pdf",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "1Y110",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "1Y110",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Seasonal Wetland",
+     "subhabitat": "Diked wetland",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 12869,
+   "name": "Healing a Wounded Watershed with the Colma Creek Collective",
+   "url": "https://www.ecoatlas.org/regions/adminregion/sfbjv/projects/12869",
+   "status": "In-progress",
+   "county": "San Mateo",
+   "type": "Non-mitigation",
+   "acres": 0.31,
+   "groups": "San Francisco Bay Joint Venture; San Francisco Bay Restoration Authority (Eligible); San Francisco Bay Restoration Authority (Funded)",
+   "admin_region": "San Francisco Bay Joint Venture - Jemma Williams, SFBJV",
+   "abstract": null,
+   "lat": 37.64421,
+   "lon": -122.39505,
+   "last_updated": "2026-01-13",
+   "funding_need": 400000,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Private",
+   "oneshoreline": "Yes",
+   "cost": "$307,760",
+   "cost_basis": "Total project: $278,660 SF Bay Restoration Authority Community Grant to San Bruno Mountain Watch + $29,100 match (San Bruno Mountain Watch, Rise South City)",
+   "cost_source": "SF Bay Restoration Authority, Item 18 staff report (Jun 2025) https://sfbayrestore.org/sites/default/files/2025-06/Item_18_Colma_Creek_Collective_SR.pdf",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026. Abstract not copied; see the EcoAtlas URL.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Colma Creek Shoreline",
+     "status": "In-progress/Implementation",
+     "acres": 0.31
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Colma Creek Shoreline",
+     "phase": "Implementation",
+     "activity": "Restoration (unspecified)",
+     "subactivities": "Vegetation Management",
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": 0.31,
+     "activity_status": "Implementation in-progress",
+     "water_regime": "Fully tidal"
+    }
+   ],
+   "funding": [
+    {
+     "phase": "Implementation",
+     "activity": "Restoration (unspecified)",
+     "funder": "SFBRA San Francisco Bay Restoration Authority - Measure AA",
+     "amount": 278660
+    }
+   ],
+   "contacts": [
+    {
+     "type": "Contact",
+     "name": "Ariel Cherbowsky Corkidi",
+     "organization": "San Bruno Mountain Watch",
+     "department": "Not applicable/Unknown"
+    }
+   ],
+   "events": [],
+   "project_ids": [
+    {
+     "id": "RA0046",
+     "type": "SFBRA - Project ID"
+    }
+   ],
+   "habitat_impacts": [],
+   "benefits": [
+    {
+     "category": "Access and recreation enhancement",
+     "tracking": "Qualitative assessment",
+     "units": null
+    },
+    {
+     "category": "Habitat restoration or protection",
+     "tracking": "Qualitative assessment",
+     "units": null
+    },
+    {
+     "category": "Water quality/flow improvement",
+     "tracking": "Qualitative assessment",
+     "units": null
+    }
+   ],
+   "cram": []
+  },
+  {
+   "id": 5443,
+   "name": "Living Shorelines: Near-Shore Linkages for San Francisco Bay",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/5443",
+   "status": "In-progress",
+   "county": null,
+   "type": "Non-mitigation",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation; San Francisco Bay Joint Venture; San Francisco Bay Restoration Authority (Eligible)",
+   "admin_region": "San Francisco Bay Joint Venture",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$2,100,000",
+   "cost_basis": "Phase 1 pilot total at San Rafael and Hayward: $400K design/permits, $450K construction, $1.25M monitoring",
+   "cost_source": "State Coastal Conservancy staff recommendation, Living Shorelines Project (Dec 2015) https://scc.ca.gov/webmaster/ftp/pdf/sccbb/2015/1512/20151203Board03G_Living_Shorelines_Project.pdf",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Living Shorelines: Near-Shore Linkages for San Francisco Bay",
+     "status": "In-progress/Implementation",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Living Shorelines: Near-Shore Linkages for San Francisco Bay",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Subtidal Habitat",
+     "subhabitat": "Submerged aquatic vegetation",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [
+    {
+     "type": null,
+     "name": "Katharyn Boyer",
+     "organization": "San Francisco Bay National Estuarine Research Reserve - SFSU Romberg-Tiburon Center",
+     "department": null
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 12237,
+   "name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+   "url": "https://neet.ecoatlas.org/regions/neet/santaclara/projects/12237",
+   "status": "Planning",
+   "county": "San Mateo",
+   "type": "Unknown/Unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation - Todd Hallenbeck, Bay Conservation and Development Commission",
+   "abstract": null,
+   "lat": 37.59595,
+   "lon": -122.36351,
+   "last_updated": "2024-08-21",
+   "funding_need": null,
+   "design_year": 2100,
+   "slr_ft": 4,
+   "storm_event": "100-year extreme water level",
+   "adaptation_type": "Hybrid",
+   "gw_adaptable": "Not applicable/unknown/unspecified",
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "Up to $8,000,000",
+   "cost_basis": "State Coastal Conservancy grant to OneShoreline (Feb 2022) for plans, design, CEQA and permits for the Millbrae–Burlingame shoreline, plus countywide regional planning",
+   "cost_source": "State Coastal Conservancy, Feb 2022 grant announcement (Feb 2022) https://scc.ca.gov/2022/02/03/coastal-conservancy-awards-nearly-40-million-in-grants-for-coastal-access-protection-and-climate-resilience/",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026. Abstract not copied; see the EcoAtlas URL.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+     "phase": "Conceptual design",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Unspecified",
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Mudflat",
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+     "phase": "Conceptual design",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Unspecified",
+     "habitat": "Subtidal Habitat",
+     "subhabitat": "Beaches",
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+     "phase": "Conceptual design",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Unspecified",
+     "habitat": "Subtidal Habitat",
+     "subhabitat": "Nearshore reefs",
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+     "phase": "Conceptual design",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Unspecified",
+     "habitat": "Subtidal Habitat",
+     "subhabitat": "Submerged aquatic vegetation",
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+     "phase": "Conceptual design",
+     "activity": "Grey Infrastructure",
+     "subactivities": "Flood walls and berms",
+     "habitat": "Unknown/unspecified habitat(s)",
+     "subhabitat": null,
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Area Protection and Enhancement Project",
+     "phase": "Conceptual design",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Ecotone Levees",
+     "habitat": "Unknown/unspecified habitat(s)",
+     "subhabitat": null,
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 12672,
+   "name": "Millbrae and Burlingame Shoreline Resilience Project (MBSRP)",
+   "url": "https://neet.ecoatlas.org/regions/neet/santaclara/projects/12672",
+   "status": "Planning",
+   "county": "San Mateo",
+   "type": "Unknown/Unspecified",
+   "acres": 5.82,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation, Todd Hallenbeck, Bay Conservation and Development Commission",
+   "abstract": "The Millbrae and Burlingame Shoreline Resilience Project (MBSRP) will provide long-term climate resilience against sea level rise and extreme storms for developed, natural, and public access areas. The main areas of focus of this project are coastal flood protection, public access and recreation, and habitat.",
+   "lat": 37.59488,
+   "lon": -122.36376,
+   "last_updated": "2026-01-27",
+   "funding_need": 4000000,
+   "design_year": 2080,
+   "slr_ft": 3,
+   "storm_event": "100-year extreme water level",
+   "adaptation_type": "Hybrid",
+   "gw_adaptable": "Not Applicable/Unknown/Unspecified",
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$4,300,000",
+   "cost_basis": "Funding allocated to the planning phase: $4.0M of the Coastal Conservancy grant + $300,000 FEMA BRIC (Burlingame; $200,000 OneShoreline match)",
+   "cost_source": "OneShoreline Board meeting presentation 10.28.24 (Oct 2024) https://oneshoreline.org/wp-content/uploads/2024/10/OneShoreline-Board-mtg-presentation-10.28.24-final.pdf",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Resilience Project",
+     "status": "Planning/Scoping",
+     "acres": 5.82
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Resilience Project",
+     "phase": "Conceptual design",
+     "activity": "Creation/Establishment",
+     "subactivities": "Infrastructure",
+     "habitat": "Subtidal Habitat",
+     "subhabitat": "Beaches",
+     "acres": 5.82,
+     "activity_status": "Proposed",
+     "water_regime": "Fully tidal"
+    },
+    {
+     "site_name": "Millbrae and Burlingame Shoreline Resilience Project",
+     "phase": "Conceptual design",
+     "activity": "Creation/Establishment",
+     "subactivities": null,
+     "habitat": "Subtidal Habitat",
+     "subhabitat": "Rock",
+     "acres": null,
+     "activity_status": "Proposed",
+     "water_regime": "Fully tidal"
+    }
+   ],
+   "funding": [],
+   "contacts": [
+    {
+     "type": "Agency Staff",
+     "name": "Summer Bundy",
+     "organization": "OneShoreline",
+     "department": "Not applicable/Unknown"
+    }
+   ],
+   "events": [
+    {
+     "date": "2026-04-30",
+     "event": "Project end date",
+     "description": null,
+     "site": null
+    },
+    {
+     "date": "2025-10-22",
+     "event": "Project submitted",
+     "description": null,
+     "site": null
+    },
+    {
+     "date": "2022-04-01",
+     "event": "Project start date",
+     "description": null,
+     "site": null
+    }
+   ],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [
+    {
+     "category": "Access and recreation enhancement",
+     "tracking": "Unknown/Unspecified",
+     "units": null
+    },
+    {
+     "category": "Flood risk and erosion reduction",
+     "tracking": "Unknown/Unspecified",
+     "units": null
+    },
+    {
+     "category": "Habitat restoration or protection",
+     "tracking": "Unknown/Unspecified",
+     "units": null
+    }
+   ],
+   "cram": []
+  },
+  {
+   "id": 11588,
+   "name": "Navigable Slough Flood Management Study",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/11588",
+   "status": "Planning",
+   "county": null,
+   "type": "Unknown/Unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "No published cost",
+   "cost_basis": "County-led Navigable Slough feasibility study; County project page lists no cost",
+   "cost_source": "San Mateo County, Navigable Slough Feasibility Study (Nov 2021) https://www.smcgov.org/publicworks/navigable-slough-feasibility-study",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Navigable Slough Flood Management Study",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [],
+   "funding": [],
+   "contacts": [],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 12242,
+   "name": "Redwood Shores Sea Level Rise Protection Project",
+   "url": "https://neet.ecoatlas.org/regions/neet/santaclara/projects/12242",
+   "status": "Planning",
+   "county": "San Mateo",
+   "type": "Unknown/unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation, Todd Hallenbeck, Bay Conservation and Development Commission",
+   "abstract": "The project aims to modify the levee system around Redwood Shores to become eligible for accreditation by FEMA, avoid properties in the area being designated as a Special Flood Hazard Area (SFHA), and establish long-term resilience against sea level rise that benefits the region.",
+   "lat": 37.53349,
+   "lon": -122.24566,
+   "last_updated": "2026-01-09",
+   "funding_need": null,
+   "design_year": 2100,
+   "slr_ft": 4,
+   "storm_event": "100-year extreme water level",
+   "adaptation_type": "Hybrid",
+   "gw_adaptable": "Not applicable/unknown/unspecified",
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "~$324M–$440M",
+   "cost_basis": "Up-front cost estimates for the two 60% design alternatives: ~$440M wider levee (Alt 1), ~$324M floodwalls on existing levee (Alt 2); from the Aug 2026 City Council item, as quoted",
+   "cost_source": "Sierra Club Loma Prieta, Two 60 Percent Design Alternatives (Aug 2026) https://www.sierraclub.org/loma-prieta/two-60-percent-design-alternatives-redwood-shores-sea-level-rise-protection-project",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Redwood Shores Sea Level Rise Protection Project",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Redwood Shores Sea Level Rise Protection Project",
+     "phase": null,
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": "Unspecified",
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Redwood Shores Sea Level Rise Protection Project",
+     "phase": null,
+     "activity": "Grey Infrastructure",
+     "subactivities": "Levees and dikes",
+     "habitat": "Unknown/unspecified habitat(s)",
+     "subhabitat": null,
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": null
+    }
+   ],
+   "funding": [
+    {
+     "phase": null,
+     "activity": "Grey Infrastructure",
+     "funder": "FEMA Federal Emergency Management Agency",
+     "amount": 2000000
+    },
+    {
+     "phase": null,
+     "activity": "Grey Infrastructure",
+     "funder": "City of Redwood City",
+     "amount": 675000
+    }
+   ],
+   "contacts": [
+    {
+     "type": "Agency Staff",
+     "name": "Andrea Coto",
+     "organization": "City of Redwood City",
+     "department": "Civil Engineer"
+    },
+    {
+     "type": "Agency Staff",
+     "name": "Paige Saber",
+     "organization": "City of Redwood City",
+     "department": "Civil Engineer"
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": [
+    {
+     "visit_date": "2025-09-24",
+     "version": "6.1",
+     "site_name": "2025 WRMP Belmont Slough 0170",
+     "wetland_type": "Estuarine perennial saline",
+     "index_score": 60
+    },
+    {
+     "visit_date": "2021-06-01",
+     "version": "6.1",
+     "site_name": "Redwood Shores NWCA 10035",
+     "wetland_type": "Estuarine perennial saline",
+     "index_score": 71
+    },
+    {
+     "visit_date": "2021-06-01",
+     "version": "6.1",
+     "site_name": "NWC21-CA-10035 Redwood Shores",
+     "wetland_type": "Estuarine perennial saline",
+     "index_score": 71
+    },
+    {
+     "visit_date": "2013-10-08",
+     "version": "6.1",
+     "site_name": "Redwood Shores Marsh (NWCA 2908)",
+     "wetland_type": "Estuarine perennial saline",
+     "index_score": 78
+    },
+    {
+     "visit_date": "2011-09-21",
+     "version": "5.0.2",
+     "site_name": "NWCA11-2908",
+     "wetland_type": "Estuarine perennial saline",
+     "index_score": 79
+    },
+    {
+     "visit_date": "2005-09-13",
+     "version": "3.55",
+     "site_name": "Bird Island-Outer Bair",
+     "wetland_type": "Estuarine perennial saline",
+     "index_score": 63
+    }
+   ]
+  },
+  {
+   "id": 11587,
+   "name": "San Bruno Creek Emergency Tide Gate Repair Project",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/11587",
+   "status": "Completed",
+   "county": null,
+   "type": "Unknown/Unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$825,000",
+   "cost_basis": "OneShoreline Board budget amendment (FY 2021–22) to replace 4 flap gates: ~$500K County emergency allowance + ~$325K annual flood zone allowance",
+   "cost_source": "OneShoreline Board meeting presentation 2.28.2022 (Feb 2022) https://oneshoreline.org/wp-content/uploads/2022/07/OneShoreline-Board-mtg-presentation-2.28.2022.pdf",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "San Bruno Creek Emergency Tide Gate Repair Project",
+     "status": "Completed",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [],
+   "funding": [],
+   "contacts": [],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 12673,
+   "name": "San Bruno Creek Resilience Project",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/12673",
+   "status": "Planning",
+   "county": null,
+   "type": "Unknown/Unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation; San Francisco Bay Joint Venture",
+   "admin_region": "San Francisco Bay Adaptation",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$1,500,000",
+   "cost_basis": "FEMA-funded planning: preferred alternative and conceptual design (not construction); planning 2025 to ~2027",
+   "cost_source": "OneShoreline, San Bruno Creek Resilience Project pamphlet (May 2025) https://oneshoreline.org/wp-content/uploads/2025/05/San-Bruno-Creek-Resilience-Project-pamphlet.pdf",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "San Bruno Creek Resilience Project",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "San Bruno Creek Resilience Project",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Unknown/unspecified habitat(s), Unknown/unspecified wetland habitat",
+     "subhabitat": null,
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [
+    {
+     "type": null,
+     "name": "Summer Bundy",
+     "organization": "OneShoreline",
+     "department": null
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 11063,
+   "name": "SFO Shoreline Protection Program",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/11063",
+   "status": "Planning",
+   "county": null,
+   "type": "Unknown/Unspecified",
+   "acres": null,
+   "groups": "San Francisco Bay Adaptation",
+   "admin_region": "San Francisco Bay Adaptation",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$587,000,000",
+   "cost_basis": "Estimated cost of the updated program (100-year storm + 36 in. sea level rise around the airport perimeter), 2019 dollars",
+   "cost_source": "SF Board of Supervisors Resolution No. 395-19 (Sep 2019) https://www.sfbos.org/sites/default/files/r0395-19.pdf",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "SFO",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [],
+   "funding": [],
+   "contacts": [
+    {
+     "type": null,
+     "name": "Doug Yakel",
+     "organization": "San Francisco International Airport",
+     "department": null
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 9109,
+   "name": "South Bay Salt Ponds: Ravenswood - Ponds R1, R2",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/statewide/projects/9109",
+   "status": "Proposed",
+   "county": null,
+   "type": "Non-mitigation",
+   "acres": null,
+   "groups": "San Francisco Bay Joint Venture; South Bay Salt Ponds",
+   "admin_region": "San Francisco Bay Joint Venture",
+   "abstract": null,
+   "lat": null,
+   "lon": null,
+   "last_updated": null,
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "No project-specific cost",
+   "cost_basis": "No cost published for these two ponds",
+   "cost_source": "South Bay Salt Pond Restoration Project FAQ (undated) https://www.southbayrestoration.org/faq/what-are-plans-funding-implementation-how-much-will-implementation-cost-and-are-there",
+   "notes": "EcoAtlas page couldn't be read here. Filled from the EcoAtlas download of Oct 29, 2026, which has no abstract, acres, location, dates, funding, climate, events or CRAM fields; check the EcoAtlas URL for those.",
+   "data_source": "EcoAtlas download (Oct 29, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Pond R1",
+     "status": "Proposed",
+     "acres": null
+    },
+    {
+     "site_name": "Pond R2",
+     "status": "Proposed",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Pond R1",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    },
+    {
+     "site_name": "Pond R2",
+     "phase": null,
+     "activity": null,
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": null,
+     "water_regime": null
+    }
+   ],
+   "funding": [],
+   "contacts": [
+    {
+     "type": null,
+     "name": "Dave Halsing",
+     "organization": "State Coastal Conservancy",
+     "department": null
+    }
+   ],
+   "events": [],
+   "project_ids": [],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 5333,
+   "name": "South Bay Salt Ponds: Ravenswood Complex - Ponds R3, R4, R5, S5, S5W",
+   "url": "https://www.ecoatlas.org/regions/ecoregion/bay-delta/projects/5333",
+   "status": "Completed",
+   "county": "San Mateo",
+   "type": "Non-mitigation",
+   "acres": 665.2,
+   "groups": "San Francisco Bay Adaptation; San Francisco Bay Joint Venture; San Francisco Bay Restoration Authority (Eligible); San Francisco Bay Restoration Authority (Funded); South Bay Salt Ponds; South Bay Salt Ponds: Phase 2",
+   "admin_region": "San Francisco Bay Joint Venture - Jemma Williams, SFBJV",
+   "abstract": null,
+   "lat": 37.48668,
+   "lon": -122.1553,
+   "last_updated": "2026-03-27",
+   "funding_need": null,
+   "design_year": 2052,
+   "slr_ft": 2,
+   "storm_event": "100-year extreme water level",
+   "adaptation_type": "Hybrid",
+   "gw_adaptable": "Not Applicable/Unknown/Unspecified",
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "~$13,000,000",
+   "cost_basis": "'The $13 million restoration effort at Ravenswood' (Phase 2; earthwork 2019–2023; also made room for part of the Bayfront Canal/Atherton Channel project)",
+   "cost_source": "SF Bay Restoration Authority news, levee breach adds 300 acres (~Dec 2023) https://www.sfbayrestore.org/node/1063",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026. Abstract not copied; see the EcoAtlas URL.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Pond R3",
+     "status": "Completed",
+     "acres": 270
+    },
+    {
+     "site_name": "Pond R3 - Ravenswood Slough Connector",
+     "status": "Construction completed",
+     "acres": 0.69
+    },
+    {
+     "site_name": "Pond R4",
+     "status": "Completed",
+     "acres": 321.2
+    },
+    {
+     "site_name": "Pond R5",
+     "status": "Completed",
+     "acres": 35.41
+    },
+    {
+     "site_name": "Pond S5",
+     "status": "Completed",
+     "acres": 30
+    },
+    {
+     "site_name": "Pond S5 west",
+     "status": "Completed",
+     "acres": 7.91
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Pond R3",
+     "phase": "Implementation",
+     "activity": "Enhancement",
+     "subactivities": null,
+     "habitat": "Seasonal Wetland",
+     "subhabitat": "Diked wetland",
+     "acres": 270,
+     "activity_status": "In progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Pond R3 - Ravenswood Slough Connector",
+     "phase": null,
+     "activity": "Restoration/Re-establishment",
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": 0.69,
+     "activity_status": "Construction completed",
+     "water_regime": "Fully tidal"
+    },
+    {
+     "site_name": "Pond R4",
+     "phase": "Implementation",
+     "activity": "Restoration/Rehabilitation",
+     "subactivities": null,
+     "habitat": "Buffer area",
+     "subhabitat": null,
+     "acres": 26.2,
+     "activity_status": "In progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Pond R4",
+     "phase": "Implementation",
+     "activity": "Restoration/Re-establishment",
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": 295,
+     "activity_status": "Completed",
+     "water_regime": "Fully tidal"
+    },
+    {
+     "site_name": "Pond R5",
+     "phase": "Implementation",
+     "activity": "Enhancement",
+     "subactivities": null,
+     "habitat": "Seasonal Wetland",
+     "subhabitat": "Diked wetland",
+     "acres": 35.41,
+     "activity_status": "In progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Pond S5",
+     "phase": "Implementation",
+     "activity": "Enhancement",
+     "subactivities": null,
+     "habitat": "Seasonal Wetland",
+     "subhabitat": "Diked wetland",
+     "acres": 30,
+     "activity_status": "In progress",
+     "water_regime": null
+    },
+    {
+     "site_name": "Pond S5 west",
+     "phase": "Implementation",
+     "activity": "Enhancement",
+     "subactivities": null,
+     "habitat": "Seasonal Wetland",
+     "subhabitat": "Diked wetland",
+     "acres": 7.91,
+     "activity_status": "In progress",
+     "water_regime": null
+    }
+   ],
+   "funding": [
+    {
+     "phase": "Implementation",
+     "activity": "Enhancement",
+     "funder": "SFBRA (Measure AA)",
+     "amount": null
+    },
+    {
+     "phase": "Implementation",
+     "activity": "Restoration/Rehabilitation",
+     "funder": "SFBRA (Measure AA)",
+     "amount": null
+    },
+    {
+     "phase": "Implementation",
+     "activity": "Restoration/Re-establishment",
+     "funder": "SFBRA (Measure AA)",
+     "amount": 6221730
+    },
+    {
+     "phase": "Implementation",
+     "activity": "Enhancement",
+     "funder": "Unknown/Unspecified",
+     "amount": 5800000
+    },
+    {
+     "phase": "Implementation",
+     "activity": "Restoration/Re-establishment",
+     "funder": "Unknown/Unspecified",
+     "amount": 5000000
+    }
+   ],
+   "contacts": [
+    {
+     "type": "Contact",
+     "name": "Dave Halsing",
+     "organization": "State Coastal Conservancy",
+     "department": "Not applicable/Unknown"
+    },
+    {
+     "type": "Agency Staff",
+     "name": "Laura Cholodenko",
+     "organization": "State Coastal Conservancy",
+     "department": "SF Bay Program"
+    }
+   ],
+   "events": [
+    {
+     "date": "2024-07-31",
+     "event": "Project end date",
+     "description": "Restoration work finished in 2023; public access features finished in 2024",
+     "site": null
+    },
+    {
+     "date": "2024-06-01",
+     "event": "Completion",
+     "description": "Trail surfacing, fencing, and signage completed Phase 2 construction at Ravenswood",
+     "site": null
+    },
+    {
+     "date": "2023-12-13",
+     "event": "Levee breach planned",
+     "description": "Exact date; source is an ABAG press release",
+     "site": "Pond R4"
+    },
+    {
+     "date": "2023-12-09",
+     "event": "Levee breach planned",
+     "description": "Completed tidal marsh restoration",
+     "site": "Pond R4"
+    },
+    {
+     "date": "2023-12-09",
+     "event": "Groundwork end",
+     "description": "Work ended on this date (breach date, not Dec 1)",
+     "site": "Pond R4"
+    },
+    {
+     "date": "2023-12-09",
+     "event": "Phase end",
+     "description": "Ended Phase 2 at R4",
+     "site": "Pond R4"
+    },
+    {
+     "date": "2023-04-30",
+     "event": "Levee breach planned",
+     "description": "Estimated within 243 days, from aerial imagery; occurred between 8/30/2022 and 4/30/2023",
+     "site": "Pond R3 - Ravenswood Slough Connector"
+    },
+    {
+     "date": "2022-03-04",
+     "event": "Completion",
+     "description": "Managed pond enhancements completed in R5, S5, and R3",
+     "site": null
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Phase end",
+     "description": "Ended Phase 2",
+     "site": "Pond S5 west"
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Phase end",
+     "description": "Ended Phase 2",
+     "site": "Pond S5"
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Groundwork end",
+     "description": null,
+     "site": "Pond S5"
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Groundwork end",
+     "description": null,
+     "site": "Pond S5 west"
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Groundwork end",
+     "description": null,
+     "site": "Pond R5"
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Phase end",
+     "description": "Ended Phase 2",
+     "site": "Pond R5"
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Groundwork end",
+     "description": null,
+     "site": "Pond R3"
+    },
+    {
+     "date": "2022-03-03",
+     "event": "Phase end",
+     "description": "Ended Phase 2 work",
+     "site": "Pond R3"
+    },
+    {
+     "date": "2019-07-01",
+     "event": "Groundwork start",
+     "description": "Material import and placement",
+     "site": null
+    },
+    {
+     "date": "2018-10-15",
+     "event": "Permit",
+     "description": "Environmental permitting completed",
+     "site": null
+    },
+    {
+     "date": "2016-04-22",
+     "event": "Report",
+     "description": "Final EIS/EIR for Phase 2 Alviso and Ravenswood Ponds",
+     "site": null
+    },
+    {
+     "date": "2012-03-01",
+     "event": "Project start date",
+     "description": "Start of material import; planning and design began in 2012",
+     "site": null
+    }
+   ],
+   "project_ids": [
+    {
+     "id": "850",
+     "type": "JV - Record Number"
+    },
+    {
+     "id": "RA-005",
+     "type": "SFBRA - Project ID"
+    }
+   ],
+   "habitat_impacts": [],
+   "benefits": [
+    {
+     "category": "Access and recreation enhancement",
+     "tracking": "Quantitative metrics collected",
+     "units": "Count"
+    },
+    {
+     "category": "Engaging participation",
+     "tracking": "Qualitative assessment",
+     "units": null
+    },
+    {
+     "category": "Engaging participation",
+     "tracking": "Quantitative metrics collected",
+     "units": "Count"
+    },
+    {
+     "category": "Flood risk and erosion reduction",
+     "tracking": "Quantitative metrics collected",
+     "units": "Miles"
+    },
+    {
+     "category": "Habitat restoration or protection",
+     "tracking": "Quantitative metrics collected",
+     "units": "Acres"
+    },
+    {
+     "category": "Water quality/flow improvement",
+     "tracking": "Quantitative metrics collected",
+     "units": "Acres"
+    }
+   ],
+   "cram": []
+  },
+  {
+   "id": 5668,
+   "name": "South Bay Salt Ponds: Ravenswood SF2",
+   "url": "https://www.ecoatlas.org/regions/adminregion/sfbjv/projects/5668",
+   "status": "Completed",
+   "county": "San Mateo",
+   "type": "Non-mitigation",
+   "acres": 239.4,
+   "groups": "San Francisco Bay Adaptation; San Francisco Bay Joint Venture; South Bay Salt Ponds; South Bay Salt Ponds: Phase 1",
+   "admin_region": "San Francisco Bay Joint Venture - Jemma Williams, SFBJV",
+   "abstract": null,
+   "lat": 37.48962,
+   "lon": -122.13414,
+   "last_updated": "2026-04-21",
+   "funding_need": null,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "$9,200,000",
+   "cost_basis": "Total cost of Pond SF2 restoration, completed 2010: USFWS $6.8M + $0.8M, Caltrans $1.1M, City of Menlo Park $0.5M",
+   "cost_source": "Mercury News (via southbayrestoration.org) (Sep 2010) https://www.southbayrestoration.org/news/articles/mercurynews%209-7-2010.pdf",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026. Abstract not copied; see the EcoAtlas URL.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Ravenswood SF2",
+     "status": "Completed",
+     "acres": 239.4
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Ravenswood SF2",
+     "phase": null,
+     "activity": "Restoration/Re-establishment",
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Salt pond",
+     "acres": 239.4,
+     "activity_status": "Completed",
+     "water_regime": "Managed non-tidal"
+    },
+    {
+     "site_name": "Ravenswood SF2",
+     "phase": null,
+     "activity": "Environmental Education/Outreach/Stewardship/Access",
+     "subactivities": "Infrastructure",
+     "habitat": null,
+     "subhabitat": null,
+     "acres": null,
+     "activity_status": "Completed",
+     "water_regime": null
+    }
+   ],
+   "funding": [
+    {
+     "phase": null,
+     "activity": "Restoration/Re-establishment",
+     "funder": "U.S. Fish and Wildlife Service",
+     "amount": 6800000
+    },
+    {
+     "phase": null,
+     "activity": "Environmental Education/Outreach/Stewardship/Access",
+     "funder": "California Department of Transportation",
+     "amount": 1100000
+    },
+    {
+     "phase": null,
+     "activity": "Environmental Education/Outreach/Stewardship/Access",
+     "funder": "U.S. Fish and Wildlife Service",
+     "amount": 800000
+    },
+    {
+     "phase": null,
+     "activity": "Restoration/Re-establishment",
+     "funder": "City of Menlo Park",
+     "amount": 500000
+    }
+   ],
+   "contacts": [
+    {
+     "type": "Contact",
+     "name": "Amy Hutzel",
+     "organization": "State Coastal Conservancy",
+     "department": "Executive Director"
+    },
+    {
+     "type": "Contact",
+     "name": "Anne Morkill",
+     "organization": "USFWS - San Francisco Bay National Wildlife Refuge Complex",
+     "department": "Not applicable/Unknown"
+    },
+    {
+     "type": "Contact",
+     "name": "Dave Halsing",
+     "organization": "State Coastal Conservancy",
+     "department": "Not applicable/Unknown"
+    },
+    {
+     "type": "Contact",
+     "name": "Brenda Buxton",
+     "organization": "State Coastal Conservancy",
+     "department": "Not applicable/Unknown"
+    }
+   ],
+   "events": [
+    {
+     "date": "2009-03-01",
+     "event": "Project start date",
+     "description": null,
+     "site": null
+    },
+    {
+     "date": "2010-09-20",
+     "event": "Project end date",
+     "description": null,
+     "site": null
+    }
+   ],
+   "project_ids": [
+    {
+     "id": "650",
+     "type": "JV - Record Number"
+    }
+   ],
+   "habitat_impacts": [],
+   "benefits": [],
+   "cram": []
+  },
+  {
+   "id": 9677,
+   "name": "Strategy to Advance Flood Protection, Ecosystems and Recreation along San Francisco Bay",
+   "url": "https://www.ecoatlas.org/regions/adminregion/sfbjv/projects/9677",
+   "status": "Planning",
+   "county": "San Mateo",
+   "type": "Non-mitigation",
+   "acres": null,
+   "groups": "San Francisco Bay Joint Venture; San Francisco Bay Restoration Authority (Eligible); San Francisco Bay Restoration Authority (Funded); South Bay Salt Ponds: Future Restoration/Enhancement",
+   "admin_region": "San Francisco Bay Joint Venture - Jemma Williams, SFBJV",
+   "abstract": null,
+   "lat": 37.48529,
+   "lon": -122.1439,
+   "last_updated": "2026-07-16",
+   "funding_need": 200000000,
+   "design_year": null,
+   "slr_ft": null,
+   "storm_event": null,
+   "adaptation_type": null,
+   "gw_adaptable": null,
+   "region": "Bayside",
+   "ownership": "Public",
+   "oneshoreline": "Yes",
+   "cost": "No total cost published",
+   "cost_basis": "No official total or construction estimate (BCDC Jul 2026 report: construction phased ~2029–2034). Phase 1 design funding: $18M FEMA HMGP + $5.5M local match (East Palo Alto reaches); $3,759,474 FEMA BRIC (Menlo Park Phase 1)",
+   "cost_source": "SFCJPA, SAFER Bay Project (2026) https://sfcjpa.specialdistrict.org/safer-bay-project",
+   "notes": "Read from the EcoAtlas project page on Nov 5, 2026. Abstract not copied; see the EcoAtlas URL.",
+   "data_source": "EcoAtlas page (Nov 5, 2026)",
+   "reviewed": false,
+   "review_notes": null,
+   "sites": [
+    {
+     "site_name": "Former Salt Ponds, Menlo Park",
+     "status": "Planning/Scoping",
+     "acres": null
+    },
+    {
+     "site_name": "Pond R1",
+     "status": "Planning/Scoping",
+     "acres": null
+    },
+    {
+     "site_name": "Pond R2",
+     "status": "Planning/Scoping",
+     "acres": null
+    },
+    {
+     "site_name": "Strategy to Advance Flood Protection, Ecosystems and Recreation along San Francisco Bay",
+     "status": "Planning/Scoping",
+     "acres": null
+    }
+   ],
+   "habitat_plan": [
+    {
+     "site_name": "Strategy to Advance Flood Protection, Ecosystems and Recreation along San Francisco Bay",
+     "phase": "Final design",
+     "activity": "Restoration (unspecified)",
+     "subactivities": null,
+     "habitat": "Estuarine Wetland",
+     "subhabitat": "Marsh",
+     "acres": null,
+     "activity_status": "Planning in-progress",
+     "water_regime": "Fully tidal"
+    }
+   ],
+   "funding": [
+    {
+     "phase": "Final design",
+     "activity": "Restoration (unspecified)",
+     "funder": "SFBRA San Francisco Bay Restoration Authority - Measure AA",
+     "amount": 8830000
+    },
+    {
+     "phase": "Final design",
+     "activity": "Restoration (unspecified)",
+     "funder": "Unknown/Unspecified Non-Federal Funder",
+     "amount": 1045625
+    }
+   ],
+   "contacts": [
+    {
+     "type": "Agency Staff",
+     "name": "Tess Byler",
+     "organization": "San Francisquito Creek Joint Powers Authority",
+     "department": "Not applicable/Unknown"
+    },
+    {
+     "type": "Agency Staff",
+     "name": "Miyko Harris-Parker",
+     "organization": "San Francisquito Creek Joint Powers Authority",
+     "department": "Not applicable/Unknown"
+    },
+    {
+     "type": "Agency Staff",
+     "name": "Margaret Bruce",
+     "organization": "San Francisquito Creek Joint Powers Authority",
+     "department": "Not applicable/Unknown"
+    }
+   ],
+   "events": [],
+   "project_ids": [
+    {
+     "id": "RA-035",
+     "type": "SFBRA - Project ID"
+    }
+   ],
+   "habitat_impacts": [],
+   "benefits": [
+    {
+     "category": "Engaging participation",
+     "tracking": "Qualitative assessment",
+     "units": null
+    }
+   ],
+   "cram": [
+    {
+     "visit_date": "2012-11-08",
+     "version": "6.0",
+     "site_name": "Faber Marsh #3",
+     "wetland_type": "Estuarine perennial saline",
+     "index_score": 72
+    }
+   ]
+  }
+ ]
+}
