@@ -66,6 +66,15 @@
   .tag.ok { color: var(--ok); }
   .tag.changed { color: var(--changed); }
   .count { color: var(--muted); font-size: 12px; }
+  #newForm { display: none; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+  #newForm.open { display: grid; }
+  #newForm label { font-size: 12px; color: var(--muted); display: grid; gap: 3px; }
+  #newForm input, #newForm select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card);
+    color: var(--text); font: inherit; width: 100%; }
+  #newForm .row2 { display: flex; gap: 8px; }
+  #newMsg { font-size: 12px; color: var(--warn); min-height: 1em; }
+  .tag.new { color: var(--accent); }
+  button.danger { color: #b3261e; }
 
   section#detail { overflow-y: auto; padding: 16px 20px 60px; min-width: 0; }
   .empty-state { color: var(--muted); padding: 40px 0; }
@@ -159,6 +168,14 @@
           <button class="chip" data-f="reviewed" aria-pressed="false" type="button">Reviewed</button>
           <button class="chip" data-f="changed" aria-pressed="false" type="button">Edited</button>
         </div>
+        <button id="btnNew" type="button">+ New project</button>
+        <form id="newForm" autocomplete="off">
+          <label>Project name (required)<input id="newName" required></label>
+          <label>EcoAtlas Project ID (if it has one)<input id="newId" inputmode="numeric" placeholder="e.g. 12465"></label>
+          <label>Region<select id="newRegion"><option>Bayside</option><option>Coastside</option></select></label>
+          <div id="newMsg"></div>
+          <div class="row2"><button class="primary" type="submit">Add project</button><button type="button" id="newCancel">Cancel</button></div>
+        </form>
         <div class="count" id="listCount"></div>
       </div>
       <div id="list" role="list"></div>
@@ -265,7 +282,8 @@ const $ = (id) => document.getElementById(id);
 const blank = (v) => v === null || v === undefined || (typeof v === "string" && v.trim() === "");
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const fmtMoney = (n) => (typeof n === "number" && isFinite(n)) ? "$" + Math.round(n).toLocaleString() : "—";
-const byId = (set, id) => set.projects.find((p) => p.id === id);
+const byId = (set, id) => set.projects.find((p) => String(p.id) === String(id));
+const ecoUrl = (id) => `https://www.ecoatlas.org/regions/ecoregion/statewide/projects/${id}`;
 
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -284,7 +302,8 @@ function clearDraft() { try { localStorage.removeItem(STORE_KEY); } catch (e) {}
 
 const sig = (o) => JSON.stringify(o);
 function isChanged(p) { const b = byId(base, p.id); return !b || sig(b) !== sig(p); }
-function changedCount() { return data.projects.filter(isChanged).length; }
+function deletedCount() { return base.projects.filter((b) => !byId(data, b.id)).length; }
+function changedCount() { return data.projects.filter(isChanged).length + deletedCount(); }
 
 function updateSaveState() {
   const el = $("saveState");
@@ -331,7 +350,8 @@ function renderList() {
     if (p.id === currentId) it.setAttribute("aria-current", "true");
     const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = p.name || `Project ${p.id}`;
     const tags = document.createElement("div"); tags.style.display = "flex"; tags.style.gap = "4px"; tags.style.alignItems = "start";
-    if (isChanged(p)) { const t = document.createElement("span"); t.className = "tag changed"; t.textContent = "edited"; tags.appendChild(t); }
+    if (p.added_in_review) { const t = document.createElement("span"); t.className = "tag new"; t.textContent = "new"; tags.appendChild(t); }
+    else if (isChanged(p)) { const t = document.createElement("span"); t.className = "tag changed"; t.textContent = "edited"; tags.appendChild(t); }
     if (p.reviewed) { const t = document.createElement("span"); t.className = "tag ok"; t.textContent = "✓ reviewed"; tags.appendChild(t); }
     const meta = document.createElement("div"); meta.className = "meta";
     const pct = completeness(p);
@@ -352,7 +372,7 @@ function renderList() {
 /* ======================= detail ======================= */
 function select(id) {
   currentId = id;
-  try { history.replaceState(null, "", "#" + id); } catch (e) {}
+  try { history.replaceState(null, "", "#" + encodeURIComponent(id)); } catch (e) {}
   renderList();
   renderDetail();
   $("detail").scrollTop = 0;
@@ -403,8 +423,28 @@ function renderDetail() {
   tr.append(h, rev);
 
   const sub = document.createElement("div"); sub.className = "subline";
-  const idS = document.createElement("span"); idS.textContent = `EcoAtlas ID ${p.id}`;
-  sub.appendChild(idS);
+  if (p.added_in_review) {
+    const lab = document.createElement("label"); lab.style.display = "inline-flex"; lab.style.gap = "6px"; lab.style.alignItems = "center";
+    lab.appendChild(document.createTextNode("EcoAtlas ID"));
+    const idIn = document.createElement("input"); idIn.value = String(p.id).startsWith("NEW-") ? "" : p.id;
+    idIn.placeholder = "none yet"; idIn.size = 8; idIn.inputMode = "numeric";
+    idIn.style.cssText = "padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);font:inherit";
+    const idMsg = document.createElement("span"); idMsg.style.color = "var(--warn)";
+    idIn.addEventListener("change", () => {
+      const v = idIn.value.trim();
+      const nextId = v === "" ? newTempId() : (/^\d+$/.test(v) ? Number(v) : v);
+      if (v !== "" && byId(data, nextId) && byId(data, nextId) !== p) { idMsg.textContent = "Another project already has that ID."; return; }
+      idMsg.textContent = "";
+      const wasAuto = !p.url || p.url === ecoUrl(p.id);
+      p.id = nextId;
+      if (wasAuto) p.url = String(nextId).startsWith("NEW-") ? null : ecoUrl(nextId);
+      store(); select(p.id);
+    });
+    lab.appendChild(idIn); sub.append(lab, idMsg);
+  } else {
+    const idS = document.createElement("span"); idS.textContent = `EcoAtlas ID ${p.id}`;
+    sub.appendChild(idS);
+  }
   if (p.url) {
     const a = document.createElement("a"); a.href = p.url; a.target = "_blank"; a.rel = "noopener";
     a.textContent = "Open in EcoAtlas ↗"; sub.appendChild(a);
@@ -416,7 +456,16 @@ function renderDetail() {
     ? "The EcoAtlas page couldn't be read, so this came from the shapefile download, which has fewer fields. Check EcoAtlas for the rest."
     : "Read from the EcoAtlas project page.";
   sub.appendChild(src);
-  if (isChanged(p)) {
+  const delP = document.createElement("button"); delP.type = "button"; delP.className = "danger"; delP.textContent = "Delete project";
+  delP.addEventListener("click", () => {
+    const i = data.projects.indexOf(p); if (i < 0) return;
+    const removed = data.projects.splice(i, 1)[0];
+    const nextP = data.projects[Math.min(i, data.projects.length - 1)];
+    currentId = nextP ? nextP.id : null; store(); renderList(); renderDetail();
+    toastUndo(`Deleted ${removed.name || "project"}`, () => { data.projects.splice(i, 0, removed); store(); select(removed.id); });
+  });
+  sub.appendChild(delP);
+  if (isChanged(p) && !p.added_in_review) {
     const undo = document.createElement("button"); undo.type = "button"; undo.textContent = "Undo my edits to this project";
     undo.addEventListener("click", () => {
       const b = byId(base, p.id); if (!b) return;
@@ -680,6 +729,39 @@ function banner(text, actions) {
   $("banners").appendChild(b);
 }
 
+/* ======================= new projects ======================= */
+function newTempId() {
+  let n = 1; while (byId(data, "NEW-" + n)) n++; return "NEW-" + n;
+}
+function blankProject(id, name, region) {
+  const p = { id, name, url: String(id).startsWith("NEW-") ? null : ecoUrl(id) };
+  SECTIONS.forEach((s) => (s.fields || []).forEach((f) => { if (!(f[0] in p)) p[f[0]] = null; }));
+  Object.keys(TABLES).forEach((k) => { p[k] = []; });
+  Object.assign(p, { name, region, oneshoreline: "Yes", data_source: "Added in review page", reviewed: false,
+    review_notes: null, added_in_review: true });
+  return p;
+}
+$("btnNew").addEventListener("click", () => {
+  const f = $("newForm"); const open = !f.classList.contains("open");
+  f.classList.toggle("open", open); $("btnNew").textContent = open ? "Close" : "+ New project";
+  $("newMsg").textContent = ""; if (open) $("newName").focus();
+});
+$("newCancel").addEventListener("click", () => { $("newForm").classList.remove("open"); $("btnNew").textContent = "+ New project"; });
+$("newForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = $("newName").value.trim(); const rawId = $("newId").value.trim();
+  if (!name) { $("newMsg").textContent = "Give the project a name."; return; }
+  const id = rawId === "" ? newTempId() : (/^\d+$/.test(rawId) ? Number(rawId) : rawId);
+  if (rawId && byId(data, id)) { $("newMsg").textContent = `ID ${rawId} is already in the list.`; return; }
+  const p = blankProject(id, name, $("newRegion").value);
+  data.projects.push(p);
+  $("newForm").reset(); $("newForm").classList.remove("open"); $("btnNew").textContent = "+ New project";
+  filter = "all"; document.querySelectorAll("#filters .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.f === "all")));
+  $("search").value = "";
+  store(); select(p.id);
+  toast(rawId ? "Project added. Use Open in EcoAtlas to copy in its details." : "Project added. Add its EcoAtlas ID at the top when it has one.");
+});
+
 /* ======================= start ======================= */
 fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" })
   .then((r) => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
@@ -699,7 +781,7 @@ fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" })
            ["Switch to the published file", () => { data = clone(base); lastDownloadedSig = null; clearDraft(); store(); renderList(); renderDetail(); }]]);
       }
     }
-    const fromHash = Number(location.hash.slice(1));
+    const fromHash = decodeURIComponent(location.hash.slice(1));
     currentId = byId(data, fromHash) ? fromHash : data.projects[0].id;
     renderList(); renderDetail(); updateSaveState();
   })

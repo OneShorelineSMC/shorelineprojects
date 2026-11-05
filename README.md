@@ -72,7 +72,8 @@ Each project is assigned by which side of the Skyline ridge (the Bay–Pacific d
 ## Project review page (`review.html`)
 A page for reviewing and filling in EcoAtlas details for the 20 Bayside OneShoreline-related projects (linked from the map's EcoAtlas section).
 - Pick a project on the left. Blank key fields are highlighted, and the yellow summary at the top links to each one. "Open in EcoAtlas" opens the project's EcoAtlas page so you can copy in what's missing.
-- Edit any field or table row (sites, habitat plan, funding, contacts, events and so on), add or delete rows, and tick **Mark as reviewed**. Filters show projects that need data, aren't reviewed yet, or that you've edited.
+- Edit any field or table row (sites, habitat plan, funding, contacts, events and so on), add or delete rows, and tick **Mark as reviewed**.
+- **+ New project** adds a project (name, optional EcoAtlas ID, Bayside/Coastside); it can be given an EcoAtlas ID later. **Delete project** removes one (with undo). New projects appear on this page and in its downloads, but not on the map, since the map draws project boundaries from `ecoatlas_san_mateo.geojson`. Filters show projects that need data, aren't reviewed yet, or that you've edited.
 - Edits save automatically **in your browser only**. To publish them, click **Download data file** and upload the downloaded `review_data.json` to the repo, replacing the old one. **Download Excel** gives the same data in the EcoAtlas template layout. **Import file** loads a data file someone else edited.
 - Projects marked "Source: EcoAtlas download" came from the Oct 29 shapefile because their EcoAtlas pages couldn't be read automatically, so they have more blanks to fill.
 
