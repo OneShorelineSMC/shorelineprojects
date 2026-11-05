@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EcoAtlas Project Review</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
   :root {
     --bg: #ffffff; --panel: #f6f7f8; --card: #ffffff; --text: #1d2327; --muted: #5f6b73;
@@ -74,6 +74,14 @@
   #newForm .row2 { display: flex; gap: 8px; }
   #newMsg { font-size: 12px; color: var(--warn); min-height: 1em; }
   .tag.new { color: var(--accent); }
+  .tag.os { color: #1b5e20; background: #dff2e1; }
+  .entry { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; padding: 8px 12px; border-radius: 8px;
+    margin-bottom: 10px; font-size: 13px; border: 1px solid var(--line); background: var(--panel); }
+  .entry strong { font-size: 13px; }
+  .entry.os { background: #e3f4e5; border-color: #81c784; color: #1b5e20; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .entry.os { background: #1f3323; border-color: #3f7d45; color: #a5d6a7; }
+    :root:not([data-theme="light"]) .tag.os { background: #1f3323; color: #a5d6a7; } }
+  :root[data-theme="dark"] .entry.os { background: #1f3323; border-color: #3f7d45; color: #a5d6a7; }
   button.danger { color: #b3261e; }
 
   section#detail { overflow-y: auto; padding: 16px 20px 60px; min-width: 0; }
@@ -167,6 +175,7 @@
           <button class="chip" data-f="unreviewed" aria-pressed="false" type="button">Not reviewed</button>
           <button class="chip" data-f="reviewed" aria-pressed="false" type="button">Reviewed</button>
           <button class="chip" data-f="changed" aria-pressed="false" type="button">Edited</button>
+          <button class="chip" data-f="os" aria-pressed="false" type="button">OneShoreline entries</button>
         </div>
         <button id="btnNew" type="button">+ New project</button>
         <form id="newForm" autocomplete="off">
@@ -266,7 +275,7 @@ const XLSX_PROJECT_COLS = [
   ["slr_ft", "SLR Design Condition (ft)"], ["storm_event", "Storm Event Design Condition"], ["adaptation_type", "Adaptation Project Type"],
   ["gw_adaptable", "Shallow Groundwater Adaptable?"], ["region", "Region (Coastside/Bayside)"], ["ownership", "Public / Private"],
   ["oneshoreline", "OneShoreline-related"], ["cost", "Cost (published)"], ["cost_basis", "Cost Basis"], ["cost_source", "Cost Source"],
-  ["notes", "Notes"], ["data_source", "Data Source"], ["reviewed", "Reviewed"], ["review_notes", "Review Notes"]
+  ["notes", "Notes"], ["_os_entry", "OneShoreline Entry"], ["data_source", "Data Source"], ["reviewed", "Reviewed"], ["review_notes", "Review Notes"]
 ];
 const XLSX_SHEETS = { sites: "Sites", habitat_plan: "Habitat Plan", funding: "Funding", contacts: "Contacts", events: "Events",
   project_ids: "Project IDs", habitat_impacts: "Habitat Impacts", benefits: "Benefits", cram: "CRAM Assessments" };
@@ -283,6 +292,9 @@ const blank = (v) => v === null || v === undefined || (typeof v === "string" && 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const fmtMoney = (n) => (typeof n === "number" && isFinite(n)) ? "$" + Math.round(n).toLocaleString() : "—";
 const byId = (set, id) => set.projects.find((p) => String(p.id) === String(id));
+const OS_ORG = /oneshoreline|flood and sea level rise resiliency/i;
+function osContacts(p) { return (p.contacts || []).filter((c) => OS_ORG.test(c.organization || "")); }
+function isOsEntry(p) { return !!p.added_in_review || osContacts(p).length > 0; }
 const ecoUrl = (id) => `https://www.ecoatlas.org/regions/ecoregion/statewide/projects/${id}`;
 
 function toast(msg) {
@@ -343,13 +355,15 @@ function renderList() {
       : filter === "needs" ? missingList(p).length > 0
       : filter === "unreviewed" ? !p.reviewed
       : filter === "reviewed" ? !!p.reviewed
-      : filter === "changed" ? isChanged(p) : true);
+      : filter === "changed" ? isChanged(p)
+      : filter === "os" ? isOsEntry(p) : true);
   rows.forEach((p) => {
     const it = document.createElement("div");
     it.className = "item"; it.setAttribute("role", "listitem"); it.tabIndex = 0;
     if (p.id === currentId) it.setAttribute("aria-current", "true");
     const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = p.name || `Project ${p.id}`;
     const tags = document.createElement("div"); tags.style.display = "flex"; tags.style.gap = "4px"; tags.style.alignItems = "start";
+    if (isOsEntry(p)) { const t = document.createElement("span"); t.className = "tag os"; t.textContent = "OneShoreline"; t.title = "OneShoreline entry"; tags.appendChild(t); }
     if (p.added_in_review) { const t = document.createElement("span"); t.className = "tag new"; t.textContent = "new"; tags.appendChild(t); }
     else if (isChanged(p)) { const t = document.createElement("span"); t.className = "tag changed"; t.textContent = "edited"; tags.appendChild(t); }
     if (p.reviewed) { const t = document.createElement("span"); t.className = "tag ok"; t.textContent = "✓ reviewed"; tags.appendChild(t); }
@@ -412,6 +426,27 @@ function renderDetail() {
   const p = byId(data, currentId);
   if (!p) { box.innerHTML = '<div class="empty-state">Pick a project from the list.</div>'; return; }
   box.replaceChildren();
+
+  // OneShoreline entry banner
+  const eb = document.createElement("div");
+  const osc = osContacts(p);
+  eb.className = "entry" + (isOsEntry(p) ? " os" : "");
+  const ebT = document.createElement("strong");
+  const ebD = document.createElement("span");
+  if (p.added_in_review) {
+    ebT.textContent = "OneShoreline entry";
+    ebD.textContent = "Added by OneShoreline in this review page; not yet on EcoAtlas unless it has an EcoAtlas ID.";
+  } else if (osc.length) {
+    ebT.textContent = "OneShoreline entry";
+    ebD.textContent = "OneShoreline is the EcoAtlas contact (" + [...new Set(osc.map((c) => c.name).filter(Boolean))].join(", ") + "), so OneShoreline can update this record on EcoAtlas.";
+  } else {
+    const orgs = [...new Set((p.contacts || []).map((c) => c.organization).filter(Boolean))];
+    ebT.textContent = "Not a OneShoreline entry";
+    ebD.textContent = orgs.length ? "EcoAtlas contact: " + orgs.join(", ") + ". Changes on EcoAtlas would go through them."
+                                  : "No EcoAtlas contact is listed.";
+  }
+  eb.append(ebT, ebD);
+  box.appendChild(eb);
 
   // title row
   const tr = document.createElement("div"); tr.className = "ptitle";
@@ -671,34 +706,161 @@ function exportJson() {
   lastDownloadedSig = sig(data); store();
   toast("Downloaded review_data.json. Upload it to the repo to publish your edits.");
 }
-function exportXlsx() {
-  if (!window.XLSX) { toast("Excel library didn't load. Try again in a moment."); return; }
-  const wb = XLSX.utils.book_new();
-  const projRows = data.projects.map((p) => {
-    const total = (p.funding || []).reduce((s, r) => s + (typeof r.amount === "number" ? r.amount : 0), 0);
-    const o = {};
-    XLSX_PROJECT_COLS.forEach(([k, label]) => {
-      o[label] = k === "_funding_total" ? total : k === "reviewed" ? (p.reviewed ? "Yes" : "No") : (blank(p[k]) ? "" : p[k]);
-    });
-    return o;
+/* Excel export with change highlighting, compared with the published data file */
+const FILL_EDIT = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFD8A8" } };   // orange: edited cell
+const FILL_NEW  = { type: "pattern", pattern: "solid", fgColor: { argb: "FFC8E6C9" } };   // green: new project / new row
+const FILL_HEAD = { type: "pattern", pattern: "solid", fgColor: { argb: "FF244161" } };
+const show = (v) => blank(v) ? "(blank)" : String(v);
+const same = (a, b) => (blank(a) && blank(b)) || String(a) === String(b);
+
+function styleHeader(ws, n) {
+  const r = ws.getRow(1);
+  for (let c = 1; c <= n; c++) {
+    const cell = r.getCell(c);
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = FILL_HEAD; cell.alignment = { vertical: "middle", wrapText: true };
+  }
+  r.height = 30;
+  ws.views = [{ state: "frozen", xSplit: 1, ySplit: 1 }];
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: n } };
+}
+function mark(cell, fill, note) {
+  cell.fill = fill;
+  if (note) cell.note = { texts: [{ font: { name: "Arial", size: 9 }, text: note }] };
+}
+
+/* Pair published rows with current rows: identical rows match first (longest common subsequence),
+   then leftover rows between matches are paired in order as edits; the rest are added or deleted. */
+function alignRows(oldRows, newRows, cols) {
+  const key = (r) => JSON.stringify(cols.map(([f]) => blank(r[f]) ? null : String(r[f])));
+  const a = oldRows.map(key), b = newRows.map(key), n = a.length, m = b.length;
+  const L = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const anchors = []; let i = 0, j = 0;
+  while (i < n && j < m) { if (a[i] === b[j]) { anchors.push([i, j]); i++; j++; } else if (L[i + 1][j] >= L[i][j + 1]) i++; else j++; }
+  anchors.push([n, m]);
+  const pairs = []; let pi = 0, pj = 0;
+  anchors.forEach(([ai, aj]) => {
+    const go = ai - pi, gn = aj - pj, k = Math.min(go, gn);
+    for (let t = 0; t < k; t++) pairs.push([pi + t, pj + t]);           // edited
+    for (let t = k; t < go; t++) pairs.push([pi + t, null]);            // deleted
+    for (let t = k; t < gn; t++) pairs.push([null, pj + t]);            // added
+    if (ai < n) pairs.push([ai, aj]);                                    // unchanged
+    pi = ai + 1; pj = aj + 1;
   });
-  const ws = XLSX.utils.json_to_sheet(projRows, { header: XLSX_PROJECT_COLS.map((c) => c[1]) });
-  ws["!cols"] = XLSX_PROJECT_COLS.map(([k]) => ({ wch: ["abstract", "cost_basis", "cost_source", "notes", "review_notes"].includes(k) ? 50 : k === "name" ? 40 : 18 }));
-  XLSX.utils.book_append_sheet(wb, ws, "Projects");
+  return pairs;
+}
+
+async function exportXlsx() {
+  if (!window.ExcelJS) { toast("Excel library didn't load. Check your connection and try again."); return; }
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "OneShoreline EcoAtlas Project Review";
+  const log = [];   // [project id, project name, sheet, field, row, old, new, change]
+  const font = { name: "Arial", size: 10 };
+  const cs = wb.addWorksheet("Changes", { properties: { tabColor: { argb: "FFE8A33D" } } });   // first tab, filled at the end
+
+  // ---- Projects
+  const ws = wb.addWorksheet("Projects");
+  ws.columns = XLSX_PROJECT_COLS.map(([k, label]) => ({ header: label, key: k,
+    width: ["abstract", "cost_basis", "cost_source", "notes", "review_notes"].includes(k) ? 50 : k === "name" ? 40 : 18 }));
+  styleHeader(ws, XLSX_PROJECT_COLS.length);
+  data.projects.forEach((p) => {
+    const b = byId(base, p.id);
+    const total = (p.funding || []).reduce((s, r) => s + (typeof r.amount === "number" ? r.amount : 0), 0);
+    const vals = {};
+    XLSX_PROJECT_COLS.forEach(([k]) => {
+      vals[k] = k === "_funding_total" ? total : k === "_os_entry" ? (isOsEntry(p) ? "Yes" : "No") : k === "reviewed" ? (p.reviewed ? "Yes" : "No") : (blank(p[k]) ? null : p[k]);
+    });
+    const row = ws.addRow(vals); row.font = font; row.alignment = { vertical: "top" };
+    if (!b) {
+      XLSX_PROJECT_COLS.forEach((_, i) => { row.getCell(i + 1).fill = FILL_NEW; });
+      log.push([p.id, p.name, "Projects", "(whole project)", "", "", "", "Added"]);
+      return;
+    }
+    XLSX_PROJECT_COLS.forEach(([k, label], i) => {
+      if (k === "_funding_total" || k === "_os_entry") return;
+      const oldV = k === "reviewed" ? (b.reviewed ? "Yes" : "No") : b[k];
+      const newV = vals[k];
+      if (!same(oldV, newV)) {
+        mark(row.getCell(i + 1), FILL_EDIT, "Was: " + show(oldV));
+        log.push([p.id, p.name, "Projects", label, "", show(oldV), show(newV), "Edited"]);
+      }
+    });
+  });
+  ws.getColumn("funding_need").numFmt = "$#,##0"; ws.getColumn("_funding_total").numFmt = "$#,##0";
+
+  // ---- repeating tables (rows compared in order with the published file)
   Object.entries(XLSX_SHEETS).forEach(([key, sheet]) => {
     const cols = TABLES[key];
-    const header = ["EcoAtlas Project ID", ...cols.map((c) => c[1])];
-    const rows = [];
-    data.projects.forEach((p) => (p[key] || []).forEach((r) => {
-      const o = { "EcoAtlas Project ID": p.id }; cols.forEach((c) => { o[c[1]] = blank(r[c[0]]) ? "" : r[c[0]]; }); rows.push(o);
-    }));
-    const s = XLSX.utils.json_to_sheet(rows, { header });
-    s["!cols"] = header.map(() => ({ wch: 22 }));
-    XLSX.utils.book_append_sheet(wb, s, sheet);
+    const s = wb.addWorksheet(sheet);
+    s.columns = [{ header: "EcoAtlas Project ID", key: "_id", width: 18 },
+      ...cols.map(([f, label]) => ({ header: label, key: f, width: f === "funder" || f === "description" ? 40 : 22 }))];
+    styleHeader(s, cols.length + 1);
+    data.projects.forEach((p) => {
+      const b = byId(base, p.id);
+      const oldRows = (b && b[key]) || [];
+      const cur = p[key] || [];
+      const pairs = b ? alignRows(oldRows, cur, cols) : cur.map((_, j) => [null, j]);
+      const summary = (r) => cols.map(([f]) => r[f]).filter((v) => !blank(v)).join(" | ");
+      // write current rows in their order; look up each row's published counterpart
+      const oldFor = new Map(pairs.filter(([o, nn]) => nn !== null).map(([o, nn]) => [nn, o]));
+      cur.forEach((r, ri) => {
+        const vals = { _id: p.id }; cols.forEach(([f]) => { vals[f] = blank(r[f]) ? null : r[f]; });
+        const row = s.addRow(vals); row.font = font;
+        const oi = oldFor.get(ri);
+        if (!b || oi === null || oi === undefined) {
+          for (let c = 1; c <= cols.length + 1; c++) row.getCell(c).fill = FILL_NEW;
+          if (b) log.push([p.id, p.name, sheet, "(new row)", ri + 1, "", summary(r), "Row added"]);
+          return;
+        }
+        const old = oldRows[oi];
+        cols.forEach(([f, label], ci) => {
+          if (!same(old[f], r[f])) {
+            mark(row.getCell(ci + 2), FILL_EDIT, "Was: " + show(old[f]));
+            log.push([p.id, p.name, sheet, label, ri + 1, show(old[f]), show(r[f]), "Edited"]);
+          }
+        });
+      });
+      if (b) pairs.filter(([o, nn]) => nn === null).forEach(([o]) =>
+        log.push([p.id, p.name, sheet, "(row removed)", "", summary(oldRows[o]), "", "Row deleted"]));
+    });
+    if (key === "funding") s.getColumn("amount").numFmt = "$#,##0";
   });
-  XLSX.writeFile(wb, `ecoatlas_projects_${new Date().toISOString().slice(0, 10)}.xlsx`);
-  toast("Excel file downloaded.");
+
+  // deleted projects
+  base.projects.filter((bp) => !byId(data, bp.id)).forEach((bp) =>
+    log.push([bp.id, bp.name, "Projects", "(whole project)", "", "", "", "Deleted"]));
+
+  // ---- Changes sheet (first tab)
+  cs.columns = [
+    { header: "EcoAtlas Project ID", width: 18 }, { header: "Project", width: 40 }, { header: "Sheet", width: 16 },
+    { header: "Field", width: 26 }, { header: "Row", width: 6 }, { header: "Old value", width: 40 },
+    { header: "New value", width: 40 }, { header: "Change", width: 12 }];
+  styleHeader(cs, 8);
+  if (!log.length) cs.addRow(["", "No changes compared with the published data file."]).font = font;
+  log.forEach((l) => {
+    const row = cs.addRow(l); row.font = font; row.alignment = { vertical: "top", wrapText: true };
+    row.getCell(8).fill = l[7] === "Edited" ? FILL_EDIT : (l[7] === "Added" || l[7] === "Row added") ? FILL_NEW
+      : { type: "pattern", pattern: "solid", fgColor: { argb: "FFF4C7C3" } };
+  });
+  const keyRow = cs.rowCount + 2;
+  cs.getCell(`A${keyRow}`).value = "Key"; cs.getCell(`A${keyRow}`).font = { ...font, bold: true };
+  [["Orange", FILL_EDIT, "Edited value (hover the cell for the old value)"],
+   ["Green", FILL_NEW, "New project or new row"],
+   ["Red", { type: "pattern", pattern: "solid", fgColor: { argb: "FFF4C7C3" } }, "Deleted (listed here only)"]].forEach(([n, f, t], i) => {
+    const r = keyRow + 1 + i; cs.getCell(`A${r}`).value = n; cs.getCell(`A${r}`).fill = f; cs.getCell(`A${r}`).font = font;
+    cs.getCell(`B${r}`).value = t; cs.getCell(`B${r}`).font = font;
+  });
+  cs.getCell(`A${keyRow + 5}`).value = `Compared with the published data file dated ${base.updated || "unknown"}. Downloaded ${new Date().toISOString().slice(0, 10)}.`;
+  cs.getCell(`A${keyRow + 5}`).font = { ...font, italic: true, color: { argb: "FF5F6B73" } };
+
+  const buf = await wb.xlsx.writeBuffer();
+  download(`ecoatlas_projects_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  toast(log.length ? `Excel downloaded with ${log.length} change${log.length > 1 ? "s" : ""} highlighted.` : "Excel downloaded. No changes to highlight.");
 }
+
 function importFile(file) {
   const rd = new FileReader();
   rd.onload = () => {
